@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files (contain sensitive keys)
+.env
+.env.local
+.env.*.local
+server/.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Flutter / Dart build artifacts (future-proof for frontend)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/.symlinks/

@@ -3,6 +3,8 @@ import cors from "cors";
 import { config } from "./config/env.js";
 import { sendSuccess } from "./utils/response.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+import authRoutes from "./routes/authRoutes.js";
+import skillRoutes from "./routes/skillRoutes.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
 
 const app = express();
@@ -20,7 +22,9 @@ app.get("/health", (req, res) => {
   }, "Server is healthy");
 });
 
-// Roadmap API routes
+// API routes
+app.use("/api/auth", authRoutes);
+app.use("/api/skills", skillRoutes);
 app.use("/api/roadmap", roadmapRoutes);
 
 // Fallback for non-existent routes

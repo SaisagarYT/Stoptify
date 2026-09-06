@@ -1,53 +1,39 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import { config } from "./config/env.js";
+import { sendSuccess } from "./utils/response.js";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
 
-// Load environment variables from .env
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Standard Middlewares
-app.use(cors()); // Allow Flutter app to connect from local emulator / device
-app.use(express.json()); // Parse JSON request bodies
+// Standard middlewares
+app.use(cors({ origin: config.corsOrigin }));
+app.use(express.json());
 
-// Health Check Endpoint
+// Server health check
 app.get("/health", (req, res) => {
-  res.status(200).json({
+  return sendSuccess(res, {
     status: "healthy",
-    timestamp: new Date().toISOString(),
-    service: "Stoptify Backend API"
-  });
+    environment: config.nodeEnv,
+    service: "Stoptify Backend API",
+  }, "Server is healthy");
 });
 
-// API Routes
+// Roadmap API routes
 app.use("/api/roadmap", roadmapRoutes);
 
-// Fallback 404 handler for undefined routes
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route '${req.originalUrl}' not found on Stoptify server.`
-  });
-});
+// Fallback for non-existent routes
+app.use(notFoundHandler);
 
-// Global Error Handling Middleware
-app.use((err, req, res, next) => {
-  console.error("Server Error:", err.stack);
-  res.status(500).json({
-    success: false,
-    message: "Internal Server Error",
-    error: err.message
-  });
-});
+// Central error handling
+app.use(errorHandler);
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`=========================================`);
-  console.log(`Stoptify Backend running on port ${PORT}`);
-  console.log(`Health Check: http://localhost:${PORT}/health`);
-  console.log(`Roadmap API: http://localhost:${PORT}/api/roadmap`);
-  console.log(`=========================================`);
-});
+// Start server
+if (config.nodeEnv !== "test") {
+  app.listen(config.port, () => {
+    console.log(`Stoptify server running on http://localhost:${config.port}`);
+  });
+}
+
+export default app;

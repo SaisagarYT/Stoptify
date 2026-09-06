@@ -1,31 +1,15 @@
--- ==============================================================================
--- Stoptify Backend Database Schema
--- Migration: 001_initial_schema.sql
--- Description: Creates all 14 core tables, constraints, foreign keys, 
---              indexes, and Row Level Security (RLS) policies.
--- ==============================================================================
-
--- 1. EXTENSIONS
--- uuid-ossp allows PostgreSQL to automatically generate random UUID identifiers.
+-- Enable UUID and Vector extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- vector extension allows storing vector embeddings for Pinecone/RAG semantic search.
 CREATE EXTENSION IF NOT EXISTS "vector";
 
--- ==============================================================================
--- 2. USER & AUTHENTICATION TABLES
--- ==============================================================================
-
--- USERS: Stores authenticated learner accounts.
--- Why soft delete? "deleted_at" allows users to deactivate without breaking historical
--- audit logs or foreign keys in completed roadmaps.
+-- User accounts
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) NOT NULL UNIQUE,
     encrypted_password VARCHAR(255) NOT NULL,
     full_name VARCHAR(150) NOT NULL,
     avatar_url VARCHAR(500),
-    preferences JSONB DEFAULT '{"theme": "system", "daily_goal_minutes": 30, "notifications_enabled": true}'::jsonb,
+    preferences JSONB DEFAULT '{"theme": "system", "daily_goal_minutes": 30}'::jsonb,
     is_active BOOLEAN DEFAULT TRUE,
     last_login_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
--- USER_SKILLS: Tracks a user's verified skills & proficiency levels (1 = Beginner, 5 = Master).
+-- User skill proficiencies
 CREATE TABLE IF NOT EXISTS user_skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -43,19 +27,14 @@ CREATE TABLE IF NOT EXISTS user_skills (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ==============================================================================
--- 3. ROADMAP & TOPIC CURRICULUM TABLES
--- ==============================================================================
-
--- ROADMAPS: The top-level learning path (e.g. "Backend Engineering", "DevOps").
--- "slug": Clean URL-friendly identifier for deep-linking (e.g. "backend-engineering").
+-- Learning roadmaps
 CREATE TABLE IF NOT EXISTS roadmaps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(200) NOT NULL,
     slug VARCHAR(200) NOT NULL UNIQUE,
     target_career VARCHAR(150),
     duration_weeks INT DEFAULT 4,
-    difficulty_level VARCHAR(50) DEFAULT 'Intermediate', -- Beginner, Intermediate, Advanced
+    difficulty_level VARCHAR(50) DEFAULT 'Intermediate',
     structure_template JSONB DEFAULT '{}'::jsonb,
     is_public BOOLEAN DEFAULT TRUE,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -63,12 +42,12 @@ CREATE TABLE IF NOT EXISTS roadmaps (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- USER_ROADMAPS: Tracks a user's enrollment and overall completion rate in a roadmap.
+-- User enrollments in roadmaps
 CREATE TABLE IF NOT EXISTS user_roadmaps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     roadmap_id UUID NOT NULL REFERENCES roadmaps(id) ON DELETE CASCADE,
-    status VARCHAR(50) DEFAULT 'in_progress', -- 'not_started', 'in_progress', 'completed', 'paused'
+    status VARCHAR(50) DEFAULT 'in_progress',
     overall_progress_percent REAL DEFAULT 0.0 CHECK (overall_progress_percent BETWEEN 0.0 AND 100.0),
     started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_accessed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -77,11 +56,7 @@ CREATE TABLE IF NOT EXISTS user_roadmaps (
     UNIQUE(user_id, roadmap_id)
 );
 
--- TOPICS: Individual milestones inside a roadmap.
--- Holds the critical 3-tier "Definition of Done":
---   1. Conceptual (ELI5 articulation)
---   2. Practical (Hands-on task)
---   3. Anti-scope (What NOT to study yet to avoid overwhelm)
+-- Topics and milestones inside a roadmap
 CREATE TABLE IF NOT EXISTS topics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     roadmap_id UUID NOT NULL REFERENCES roadmaps(id) ON DELETE CASCADE,
@@ -92,18 +67,18 @@ CREATE TABLE IF NOT EXISTS topics (
     estimated_duration_min VARCHAR(50) DEFAULT '30 min',
     definition_of_done JSONB NOT NULL DEFAULT '{"conceptual": "", "practical": "", "anti_scope": ""}'::jsonb,
     anti_scope JSONB DEFAULT '[]'::jsonb,
-    prerequisites_ids JSONB DEFAULT '[]'::jsonb, -- Array of topic UUIDs that must be passed first
+    prerequisites_ids JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(roadmap_id, slug)
 );
 
--- USER_TOPIC_PROGRESS: Tracks each student's progress through individual topics.
+-- User progress on individual topics
 CREATE TABLE IF NOT EXISTS user_topic_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_roadmap_id UUID NOT NULL REFERENCES user_roadmaps(id) ON DELETE CASCADE,
     topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
-    status VARCHAR(50) DEFAULT 'locked', -- 'locked', 'in_progress', 'completed'
+    status VARCHAR(50) DEFAULT 'locked',
     attempts_count INT DEFAULT 0,
     last_accessed TIMESTAMP WITH TIME ZONE,
     started_at TIMESTAMP WITH TIME ZONE,
@@ -112,11 +87,7 @@ CREATE TABLE IF NOT EXISTS user_topic_progress (
     UNIQUE(user_roadmap_id, topic_id)
 );
 
--- ==============================================================================
--- 4. KNOWLEDGE BASE & RAG (RETRIEVAL-AUGMENTED GENERATION) TABLES
--- ==============================================================================
-
--- USER_UPLOADS: Stores metadata for documents uploaded by the user (notes, PDFs).
+-- User document uploads for RAG
 CREATE TABLE IF NOT EXISTS user_uploads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -130,8 +101,7 @@ CREATE TABLE IF NOT EXISTS user_uploads (
     processed_at TIMESTAMP WITH TIME ZONE
 );
 
--- DOCUMENT_CHUNKS: Chunks extracted from uploaded files for semantic search.
--- Vector dimension 1536 corresponds to standard OpenAI / Gemini text-embedding models.
+-- Document chunks and vector embeddings
 CREATE TABLE IF NOT EXISTS document_chunks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     upload_id UUID NOT NULL REFERENCES user_uploads(id) ON DELETE CASCADE,
@@ -142,36 +112,32 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- GENERATED_CONTENT: Textbook chapters, summaries, and diagrams generated by AI for a topic.
+-- AI generated content for topics
 CREATE TABLE IF NOT EXISTS generated_content (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
-    content_type VARCHAR(50) NOT NULL, -- 'textbook_chapter', 'cheat_sheet', 'mermaid_diagram'
+    content_type VARCHAR(50) NOT NULL,
     body TEXT NOT NULL,
     version VARCHAR(20) DEFAULT 'v1.0',
     metadata JSONB DEFAULT '{}'::jsonb,
-    generated_by_ai_model VARCHAR(100), -- Model identifier (e.g. 'gemini-1.5-pro')
+    generated_by_ai_model VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ==============================================================================
--- 5. MULTI-MODAL ASSESSMENT & FEYNMAN ORAL EXAM TABLES
--- ==============================================================================
-
--- ASSESSMENTS: Quizzes, drag-and-drop challenges, or oral defense prompts for a topic.
+-- Topic assessments
 CREATE TABLE IF NOT EXISTS assessments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     topic_id UUID NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, -- 'oral_exam', 'mcq', 'drag_and_drop'
+    type VARCHAR(50) NOT NULL,
     questions JSONB NOT NULL,
     grading_rubric JSONB DEFAULT '{}'::jsonb,
-    passing_score_threshold INT DEFAULT 80, -- Need >= 80% to pass
+    passing_score_threshold INT DEFAULT 80,
     time_limit_seconds INT DEFAULT 180,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- USER_ASSESSMENT_RESULTS: Records each assessment attempt and its grade.
+-- Assessment results and scores
 CREATE TABLE IF NOT EXISTS user_assessment_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_topic_progress_id UUID NOT NULL REFERENCES user_topic_progress(id) ON DELETE CASCADE,
@@ -185,7 +151,7 @@ CREATE TABLE IF NOT EXISTS user_assessment_results (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ORAL_EXAM_SESSIONS: Detailed logs for Feynman oral defenses (audio + transcript + AI evaluation).
+-- Oral exam recordings and AI evaluations
 CREATE TABLE IF NOT EXISTS oral_exam_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_assessment_result_id UUID NOT NULL REFERENCES user_assessment_results(id) ON DELETE CASCADE,
@@ -193,37 +159,31 @@ CREATE TABLE IF NOT EXISTS oral_exam_sessions (
     transcript TEXT,
     ai_evaluation JSONB DEFAULT '{}'::jsonb,
     confidence_score REAL CHECK (confidence_score BETWEEN 0.0 AND 1.0),
-    session_status VARCHAR(50) DEFAULT 'completed', -- 'in_progress', 'completed', 'failed'
+    session_status VARCHAR(50) DEFAULT 'completed',
     session_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ==============================================================================
--- 6. SYSTEM AUDIT & SECURITY TABLES
--- ==============================================================================
-
--- SYSTEM_AUDIT_LOGS: Audit trail for user actions (security, compliance, debugging).
+-- System audit trail
 CREATE TABLE IF NOT EXISTS system_audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    action_type VARCHAR(100) NOT NULL, -- 'LOGIN', 'SUBMIT_ASSESSMENT', 'ENROLL_ROADMAP'
+    action_type VARCHAR(100) NOT NULL,
     payload JSONB DEFAULT '{}'::jsonb,
     ip_address VARCHAR(45),
     user_agent VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- API_RATE_LIMITS: Tracks request counters to protect against DDOS or AI API abuse.
+-- Rate limits per IP or user
 CREATE TABLE IF NOT EXISTS api_rate_limits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    identifier VARCHAR(150) NOT NULL UNIQUE, -- IP address or User ID
+    identifier VARCHAR(150) NOT NULL UNIQUE,
     request_count INT DEFAULT 1,
     window_start TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ==============================================================================
--- 7. PERFORMANCE INDEXES
--- ==============================================================================
+-- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_skills_user_id ON user_skills(user_id);
 CREATE INDEX IF NOT EXISTS idx_roadmaps_slug ON roadmaps(slug);
 CREATE INDEX IF NOT EXISTS idx_topics_roadmap_id ON topics(roadmap_id);
@@ -235,24 +195,18 @@ CREATE INDEX IF NOT EXISTS idx_assessments_topic_id ON assessments(topic_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON system_audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_rate_limits_identifier ON api_rate_limits(identifier);
 
--- ==============================================================================
--- 8. ROW LEVEL SECURITY (RLS) POLICIES
--- Ensures each user can only read and write their own data in Supabase.
--- ==============================================================================
-
--- Enable RLS on private user tables
+-- Row Level Security policies
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_roadmaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_topic_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_uploads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_assessment_results ENABLE ROW LEVEL SECURITY;
-
--- Public can read published roadmaps and topics
 ALTER TABLE roadmaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
 
+-- Allow public read access to roadmaps and topics
 CREATE POLICY "Public read-access for published roadmaps"
     ON roadmaps FOR SELECT
     USING (is_public = TRUE);
@@ -260,4 +214,3 @@ CREATE POLICY "Public read-access for published roadmaps"
 CREATE POLICY "Public read-access for topics of published roadmaps"
     ON topics FOR SELECT
     USING (EXISTS (SELECT 1 FROM roadmaps WHERE roadmaps.id = topics.roadmap_id AND roadmaps.is_public = TRUE));
-

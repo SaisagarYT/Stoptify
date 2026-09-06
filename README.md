@@ -67,3 +67,4 @@ The server starts by default on `http://localhost:5050`.
 - [ ] **Milestone 6**: Document Processing & RAG Pipeline
 - [ ] **Milestone 7**: Auditing, Rate Limiting & Integration Testing
 - [ ] **Milestone 8**: Flutter Mobile Application
+

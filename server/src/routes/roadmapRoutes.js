@@ -1,19 +1,31 @@
 import express from "express";
+import { z } from "zod";
 import {
-  getRoadmap,
-  getMilestoneById,
-  completeMilestone,
+  getRoadmaps,
+  getRoadmapDetail,
+  enrollRoadmap,
+  getRoadmapProgress,
+  updateTopicProgress,
 } from "../controllers/roadmapController.js";
+import { validate } from "../middlewares/validate.js";
+import { requireAuth } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// GET /api/roadmap - Fetch full roadmap
-router.get("/", getRoadmap);
+// Schema for updating topic status
+const topicStatusSchema = z.object({
+  status: z.enum(["locked", "in_progress", "completed"], {
+    message: "Status must be 'locked', 'in_progress', or 'completed'.",
+  }),
+});
 
-// GET /api/roadmap/:id - Fetch single milestone
-router.get("/:id", getMilestoneById);
+// Public endpoints
+router.get("/", getRoadmaps);
+router.get("/:idOrSlug", getRoadmapDetail);
 
-// POST /api/roadmap/:id/complete - Mark a milestone completed & unlock next
-router.post("/:id/complete", completeMilestone);
+// Protected learner progression endpoints
+router.post("/:id/enroll", requireAuth, enrollRoadmap);
+router.get("/:id/progress", requireAuth, getRoadmapProgress);
+router.patch("/:id/topics/:topicId", requireAuth, validate(topicStatusSchema), updateTopicProgress);
 
 export default router;

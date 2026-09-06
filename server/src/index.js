@@ -26,6 +26,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/roadmap", roadmapRoutes);
+app.use("/api/roadmaps", roadmapRoutes);
 
 // Fallback for non-existent routes
 app.use(notFoundHandler);

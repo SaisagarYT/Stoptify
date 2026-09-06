@@ -1,106 +1,112 @@
-import { sampleRoadmap } from "../data/mockRoadmap.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import {
+  roadmaps,
+  findRoadmapByIdOrSlug,
+  findTopicsByRoadmapId,
+  enrollUserInRoadmap,
+  getStudentRoadmapProgress,
+  updateStudentTopicStatus,
+} from "../db/inMemoryStore.js";
 
-// In-memory state for local testing before connecting Supabase database
-let currentRoadmap = { ...sampleRoadmap };
-
-/**
- * Controller: Get the full roadmap with all milestones
- */
-// Returns the complete learning roadmap
-export const getRoadmap = (req, res) => {
+// Returns list of all available public roadmaps
+export const getRoadmaps = (req, res) => {
   try {
-    return res.status(200).json({
-      success: true,
-      data: currentRoadmap,
-    });
-    return sendSuccess(res, currentRoadmap, "Roadmap fetched successfully");
+    return sendSuccess(res, roadmaps, "Roadmaps retrieved successfully.");
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch roadmap",
-      error: error.message,
-    });
-    return sendError(res, "Failed to fetch roadmap", 500, error.message);
+    return sendError(res, "Failed to retrieve roadmaps.", 500, error.message);
   }
 };
 
-/**
- * Controller: Get a single milestone by its ID
- */
-// Returns a single milestone by its ID
-export const getMilestoneById = (req, res) => {
+// Returns roadmap details and its ordered topics with 3-tier Definition of Done
+export const getRoadmapDetail = (req, res) => {
   try {
-    const { id } = req.params;
-    const milestone = currentRoadmap.milestones.find((m) => m.id === id);
+    const { idOrSlug } = req.params;
+    const roadmap = findRoadmapByIdOrSlug(idOrSlug);
 
-    if (!milestone) {
-      return res.status(404).json({
-        success: false,
-        message: `Milestone with ID '${id}' not found`,
-      });
-      return sendError(res, `Milestone with ID '${id}' not found`, 404);
+    if (!roadmap) {
+      return sendError(res, `Roadmap '${idOrSlug}' not found.`, 404);
     }
 
-    return res.status(200).json({
-      success: true,
-      data: milestone,
-    });
-    return sendSuccess(res, milestone, "Milestone retrieved successfully");
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch milestone",
-      error: error.message,
-    });
-    return sendError(res, "Failed to fetch milestone", 500, error.message);
-  }
-};
+    const roadmapTopics = findTopicsByRoadmapId(roadmap.id);
 
-/**
- * Controller: Update milestone completion status (e.g. after passing oral exam or MCQ)
- */
-// Marks a milestone completed and unlocks the next milestone
-export const completeMilestone = (req, res) => {
-  try {
-    const { id } = req.params;
-    const index = currentRoadmap.milestones.findIndex((m) => m.id === id);
-
-    if (index === -1) {
-      return res.status(404).json({
-        success: false,
-        message: `Milestone with ID '${id}' not found`,
-      });
-      return sendError(res, `Milestone with ID '${id}' not found`, 404);
-    }
-
-    // Mark current node as completed
-    currentRoadmap.milestones[index].status = "completed";
-
-    // Unlock the next node if it exists
-    // Unlock next milestone if available
-    if (index + 1 < currentRoadmap.milestones.length) {
-      if (currentRoadmap.milestones[index + 1].status === "locked") {
-        currentRoadmap.milestones[index + 1].status = "in_progress";
-      }
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Milestone '${id}' marked as completed! Next milestone unlocked.`,
-      data: currentRoadmap.milestones[index],
-    });
     return sendSuccess(
       res,
-      currentRoadmap.milestones[index],
-      `Milestone '${id}' marked completed`
+      { ...roadmap, topics: roadmapTopics },
+      "Roadmap details retrieved successfully."
     );
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to complete milestone",
-      error: error.message,
-    });
-    return sendError(res, "Failed to complete milestone", 500, error.message);
+    return sendError(res, "Failed to retrieve roadmap details.", 500, error.message);
+  }
+};
+
+// Enrolls authenticated user into a roadmap
+export const enrollRoadmap = (req, res) => {
+  try {
+    const { id } = req.params;
+    const roadmap = findRoadmapByIdOrSlug(id);
+
+    if (!roadmap) {
+      return sendError(res, `Roadmap '${id}' not found.`, 404);
+    }
+
+    const enrollment = enrollUserInRoadmap(req.user.id, roadmap.id);
+
+    return sendSuccess(
+      res,
+      enrollment,
+      "Successfully enrolled in roadmap. First topic unlocked!",
+      201
+    );
+  } catch (error) {
+    return sendError(res, "Enrollment failed.", 500, error.message);
+  }
+};
+
+// Gets user progress across topics in a roadmap
+export const getRoadmapProgress = (req, res) => {
+  try {
+    const { id } = req.params;
+    const roadmap = findRoadmapByIdOrSlug(id);
+
+    if (!roadmap) {
+      return sendError(res, `Roadmap '${id}' not found.`, 404);
+    }
+
+    const progress = getStudentRoadmapProgress(req.user.id, roadmap.id);
+
+    if (!progress) {
+      return sendError(res, "User is not enrolled in this roadmap.", 404);
+    }
+
+    return sendSuccess(res, progress, "Roadmap progress retrieved.");
+  } catch (error) {
+    return sendError(res, "Failed to retrieve progress.", 500, error.message);
+  }
+};
+
+// Updates student topic progress and unlocks the next topic if completed
+export const updateTopicProgress = (req, res) => {
+  try {
+    const { id, topicId } = req.params;
+    const { status } = req.body;
+
+    const roadmap = findRoadmapByIdOrSlug(id);
+    if (!roadmap) {
+      return sendError(res, `Roadmap '${id}' not found.`, 404);
+    }
+
+    const result = updateStudentTopicStatus(req.user.id, roadmap.id, topicId, status);
+
+    if (!result) {
+      return sendError(res, "Unable to update topic progress. Check enrollment.", 400);
+    }
+
+    return sendSuccess(
+      res,
+      result,
+      `Topic updated to '${status}'. Next topic progression evaluated.`
+    );
+  } catch (error) {
+    return sendError(res, "Failed to update topic status.", 500, error.message);
   }
 };

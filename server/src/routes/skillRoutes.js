@@ -19,3 +19,4 @@ router.get("/", getUserSkills);
 router.post("/", validate(skillSchema), saveSkill);
 
 export default router;
+

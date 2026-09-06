@@ -94,3 +94,4 @@ export const getMe = (req, res) => {
     return sendError(res, "Failed to retrieve profile.", 500, error.message);
   }
 };
+

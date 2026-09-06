@@ -27,3 +27,4 @@ export const saveSkill = (req, res) => {
     return sendError(res, "Failed to update skill.", 500, error.message);
   }
 };
+

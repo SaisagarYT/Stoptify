@@ -62,3 +62,4 @@ export const upsertSkill = ({ userId, skillName, proficiencyLevel }) => {
   userSkills.push(newSkill);
   return newSkill;
 };
+

@@ -35,3 +35,4 @@ export const requireAuth = (req, res, next) => {
     return sendError(res, "Invalid or expired token.", 401, error.message);
   }
 };
+

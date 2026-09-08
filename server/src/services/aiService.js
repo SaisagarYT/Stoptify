@@ -179,7 +179,8 @@ Generate 2 MCQs, 3 progressive Feynman oral defense probes, and 1 sequence order
 // Analyzes resume text to extract skills, suggested domain categories, and gaps
 export const analyzeResumeContent = async ({ resumeText }) => {
   const systemPrompt = `You are Stoptify's Senior Talent & Curriculum Architect.
-Analyze the candidate's resume to identify demonstrated technical proficiencies and recommend targeted learning domains.
+Analyze the candidate's resume to identify demonstrated technical proficiencies, recommend targeted learning domains, and generate 5 precise diagnostic questions to verify authenticity, strengths, gaps, and career targets.
+
 Output MUST be a valid JSON object matching this exact schema:
 {
   "candidateSummary": string,
@@ -198,15 +199,86 @@ Output MUST be a valid JSON object matching this exact schema:
       "matchReason": string
     }
   ],
-  "identifiedGaps": [string]
+  "identifiedGaps": [string],
+  "diagnosticQuestions": [
+    {
+      "id": "q1",
+      "category": "Authenticity & Real Experience",
+      "question": string, // Probing a specific project or claimed skill from their resume to verify if built from scratch vs tutorial
+      "hint": string
+    },
+    {
+      "id": "q2",
+      "category": "Core Strengths",
+      "question": string, // Asking which skill/stack from their resume they can code in with 100% confidence without looking up docs
+      "hint": string
+    },
+    {
+      "id": "q3",
+      "category": "Identified Weakness & Gaps",
+      "question": string, // Asking which listed topic they feel shaky or theoretical about that needs solid verification
+      "hint": string
+    },
+    {
+      "id": "q4",
+      "category": "Career Target & Job Goal",
+      "question": string, // Asking what specific job role, company tier, or project they are actively preparing to land
+      "hint": string
+    },
+    {
+      "id": "q5",
+      "category": "Depth & When to Stop",
+      "question": string, // Asking whether they need practical production mastery or rapid interview-ready coverage to calibrate anti-scope stop boundaries
+      "hint": string
+    }
+  ]
 }`;
 
   const userPrompt = `Candidate Resume Content:
 ${resumeText}
 
-Analyze this resume and extract the skills and recommended domain categories in strict JSON format.`;
+Analyze this resume, extract skills, and generate the 5 personalized diagnostic questions in strict JSON format.`;
 
-  return await callAiChat({ systemPrompt, userPrompt });
+  const result = await callAiChat({ systemPrompt, userPrompt });
+
+  // Fallback diagnostic questions if AI omitted any
+  if (!result.diagnosticQuestions || !Array.isArray(result.diagnosticQuestions) || result.diagnosticQuestions.length < 3) {
+    const topSkill = result.detectedSkills?.[0]?.skillName || "the core stack";
+    result.diagnosticQuestions = [
+      {
+        id: "q1",
+        category: "Authenticity & Experience",
+        question: `On your resume, you listed experience with ${topSkill}. Did you build and deploy this in a production project, or was it primarily through guided tutorials? What was the hardest bug you solved?`,
+        hint: "Be completely honest — this ensures we skip basics you already know.",
+      },
+      {
+        id: "q2",
+        category: "Core Strengths",
+        question: "Which specific language, database, or tool on your resume do you feel 100% confident writing code in without looking at documentation?",
+        hint: "We will treat this as your verified foundational strength.",
+      },
+      {
+        id: "q3",
+        category: "Skill Gaps & Weaknesses",
+        question: "Which topic or architectural pattern on your resume feels shaky, theoretical, or makes you nervous if asked in an interview?",
+        hint: "This helps us identify your exact learning frontier.",
+      },
+      {
+        id: "q4",
+        category: "Career Target & Job Goal",
+        question: "What specific job title, company tier (startups, mid-size, big tech), or upcoming interview are you aiming for?",
+        hint: "We calibrate the roadmap strictly to match industry hiring bars.",
+      },
+      {
+        id: "q5",
+        category: "When to Stop & Depth",
+        question: "What is your target depth: do you need deep production-grade mastery with practical labs, or fast interview-ready knowledge? When should the curriculum stop?",
+        hint: "Prevents tutorial hell by defining explicit boundaries on what NOT to study yet.",
+      },
+    ];
+  }
+
+  return result;
 };
 
 // Conducts a turn in the interactive diagnostic chat consultation

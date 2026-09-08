@@ -68,8 +68,11 @@ class SaasTabSwitcher extends StatelessWidget {
                           duration: const Duration(milliseconds: 200),
                           style: AppTypography.heading(
                             fontSize: 13.5,
-                            weight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? AppColors.buttonText : AppColors.textSecondary,
+                            weight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? AppColors.buttonText
+                                : AppColors.textSecondary,
                           ),
                           child: Text(tabs[index]),
                         ),

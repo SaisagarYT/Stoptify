@@ -62,5 +62,3 @@ class AppLogoBadge extends StatelessWidget {
     );
   }
 }
-
-

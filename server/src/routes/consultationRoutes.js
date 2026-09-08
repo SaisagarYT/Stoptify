@@ -6,6 +6,7 @@ import {
   sendConsultationMessageEndpoint,
   finalizeConsultationEndpoint,
   getConsultationSessionEndpoint,
+  calibrateFromInquiryEndpoint,
 } from "../controllers/consultationController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
@@ -68,7 +69,16 @@ router.post(
   finalizeConsultationEndpoint
 );
 
+router.post(
+  "/calibrate-from-inquiry",
+  requireAuth,
+  consultationLimiter,
+  recordAuditLog("ROADMAP_CALIBRATE_INQUIRY"),
+  calibrateFromInquiryEndpoint
+);
+
 router.get("/session/:sessionId", requireAuth, getConsultationSessionEndpoint);
 
 export default router;
+
 

@@ -38,7 +38,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (auth.status == AuthStatus.unknown) return null; // still bootstrapping session
       if (auth.status == AuthStatus.unauthenticated && !loggingIn) return RoutePaths.login;
-      if (auth.status == AuthStatus.authenticated && loggingIn) return RoutePaths.skillBaseline;
+      if (auth.status == AuthStatus.authenticated && loggingIn) return RoutePaths.resumeIntake;
       return null;
     },
     routes: [

@@ -326,3 +326,146 @@ export const getConsultationSessionEndpoint = async (req, res) => {
     return sendError(res, "Failed to retrieve consultation session.", 500, error.message);
   }
 };
+
+// Calibrates custom roadmap directly from the 5-question resume diagnostic answers
+export const calibrateFromInquiryEndpoint = async (req, res) => {
+  try {
+    const { resumeSummary, targetDomain = "Engineering", qaAnswers = [] } = req.body;
+
+    // Retrieve user skills from database or in-memory
+    let skills = [];
+    if (isDatabaseConnected && supabase) {
+      const { data } = await supabase
+        .from("user_skills")
+        .select("*")
+        .eq("user_id", req.user.id);
+      skills = data || [];
+    } else {
+      skills = userSkills.filter((s) => s.userId === req.user.id);
+    }
+
+    const consultationSummary = {
+      resumeSummary,
+      completedTopics: [],
+      targetDepth: "mastery",
+      qaAnswers,
+    };
+
+    const roadmapJson = await synthesizeCalibratedRoadmap({
+      domain: targetDomain,
+      consultationSummary,
+      userSkills: skills,
+    });
+
+    const uniqueSlug = `${roadmapJson.slug || "custom-roadmap"}-${Date.now().toString().slice(-5)}`;
+    let createdRoadmap = null;
+    let createdTopics = [];
+
+    if (isDatabaseConnected && supabase) {
+      const { data: rData, error: rErr } = await supabase
+        .from("roadmaps")
+        .insert([
+          {
+            title: roadmapJson.title,
+            slug: uniqueSlug,
+            target_career: roadmapJson.targetCareer || targetDomain,
+            duration_weeks: roadmapJson.durationWeeks || 4,
+            difficulty_level: roadmapJson.difficultyLevel || "Intermediate",
+            structure_template: { qaAnswersCount: qaAnswers.length },
+            is_public: false,
+            created_by: req.user.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (rErr) throw new Error(`Failed to save roadmap: ${rErr.message}`);
+      createdRoadmap = rData;
+
+      if (roadmapJson.topics && Array.isArray(roadmapJson.topics)) {
+        for (const t of roadmapJson.topics) {
+          const { data: tData } = await supabase
+            .from("topics")
+            .insert([
+              {
+                roadmap_id: createdRoadmap.id,
+                title: t.title,
+                slug: `${t.slug || "topic"}-${t.orderIndex}`,
+                description: t.description,
+                order_index: t.orderIndex,
+                estimated_duration_min: t.estimatedDurationMin || "45 min",
+                definition_of_done: {
+                  conceptual: t.definitionOfDone?.conceptual || "Explain core concept clearly",
+                  practical: t.definitionOfDone?.practical || "Complete implementation exercise",
+                  anti_scope: t.definitionOfDone?.anti_scope || "Do not explore edge features yet",
+                  subtopics: t.subtopics || [],
+                  real_world_example: t.realWorldExample || null,
+                  when_to_stop: t.whenToStopCriteria || "Master core DoD to pass.",
+                },
+                anti_scope: t.antiScopeList || [],
+                prerequisites_ids: [],
+              },
+            ])
+            .select()
+            .single();
+
+          if (tData) createdTopics.push(tData);
+        }
+      }
+
+      // Auto-enroll user in the newly created roadmap
+      const { data: userRoadmap } = await supabase
+        .from("user_roadmaps")
+        .insert([
+          {
+            user_id: req.user.id,
+            roadmap_id: createdRoadmap.id,
+            progress_percentage: 0.0,
+          },
+        ])
+        .select()
+        .single();
+
+      if (userRoadmap && createdTopics.length > 0) {
+        for (let i = 0; i < createdTopics.length; i++) {
+          await supabase.from("user_topic_progress").insert([
+            {
+              user_roadmap_id: userRoadmap.id,
+              topic_id: createdTopics[i].id,
+              status: i === 0 ? "in_progress" : "locked",
+              attempts_count: 0,
+            },
+          ]);
+        }
+      }
+    } else {
+      createdRoadmap = {
+        id: randomUUID(),
+        title: roadmapJson.title,
+        slug: uniqueSlug,
+        targetCareer: roadmapJson.targetCareer || targetDomain,
+        durationWeeks: roadmapJson.durationWeeks || 4,
+        difficultyLevel: roadmapJson.difficultyLevel || "Intermediate",
+        isPublic: false,
+        createdBy: req.user.id,
+        createdAt: new Date().toISOString(),
+      };
+      roadmaps.push(createdRoadmap);
+      enrollUserInRoadmap(req.user.id, createdRoadmap.id);
+    }
+
+    return sendSuccess(
+      res,
+      {
+        roadmap: createdRoadmap,
+        topics: createdTopics,
+        topicsCount: createdTopics.length,
+      },
+      "Roadmap synthesized and enrolled from diagnostic inquiry.",
+      201
+    );
+  } catch (error) {
+    return sendError(res, "Failed to calibrate roadmap from inquiry.", 500, error.message);
+  }
+};
+

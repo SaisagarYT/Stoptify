@@ -66,6 +66,31 @@ class ResumeAnalysisNotifier extends StateNotifier<ResumeAnalysisState> {
   void selectDomain(String domainCategoryId) {
     state = state.copyWith(selectedDomainCategoryId: domainCategoryId);
   }
+
+  // Calibrates custom roadmap from the 5 diagnostic inquiry answers
+  Future<String?> calibrateRoadmap({
+    required String resumeSummary,
+    required String targetDomain,
+    required List<Map<String, String>> qaAnswers,
+  }) async {
+    final api = ref.read(apiClientProvider);
+    try {
+      final envelope = await api.post(
+        ApiEndpoints.calibrateFromInquiry,
+        body: {
+          'resumeSummary': resumeSummary,
+          'targetDomain': targetDomain,
+          'qaAnswers': qaAnswers,
+        },
+      );
+      final data = envelope.data as Map<String, dynamic>;
+      final roadmap = data['roadmap'] as Map<String, dynamic>?;
+      return roadmap?['id']?.toString() ?? data['roadmapId']?.toString();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return null;
+    }
+  }
 }
 
 final resumeAnalysisProvider =

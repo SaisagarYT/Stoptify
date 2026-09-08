@@ -19,7 +19,8 @@ class AuthState {
     this.error,
   });
 
-  AuthState copyWith({AuthStatus? status, AppUser? user, bool? isLoading, String? error}) {
+  AuthState copyWith(
+      {AuthStatus? status, AppUser? user, bool? isLoading, String? error}) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
@@ -54,7 +55,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> register({required String name, required String email, required String password}) {
+  Future<bool> register(
+      {required String name, required String email, required String password}) {
     return _authenticate(
       ApiEndpoints.register,
       {'name': name, 'fullName': name, 'email': email, 'password': password},
@@ -62,7 +64,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> login({required String email, required String password}) {
-    return _authenticate(ApiEndpoints.login, {'email': email, 'password': password});
+    return _authenticate(
+        ApiEndpoints.login, {'email': email, 'password': password});
   }
 
   Future<bool> _authenticate(String path, Map<String, dynamic> body) async {

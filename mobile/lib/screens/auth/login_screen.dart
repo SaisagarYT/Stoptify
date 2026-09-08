@@ -19,7 +19,8 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedTab = 0; // 0: Sign In, 1: Create Account
 
   // Sign In controllers
@@ -61,7 +62,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   // Handles Registration submission
   Future<void> _handleRegister() async {
     if (!_registerFormKey.currentState!.validate()) return;
-    if (_registerPasswordController.text != _registerConfirmPasswordController.text) {
+    if (_registerPasswordController.text !=
+        _registerConfirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match.')),
       );
@@ -111,7 +113,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 430),
                     child: Column(
@@ -122,9 +125,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         Center(
                           child: Column(
                             children: [
-                              const AppLogoBadge(size: 60)
-                                  .animate()
-                                  .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOutBack),
+                              const AppLogoBadge(size: 60).animate().scale(
+                                  begin: const Offset(0.9, 0.9),
+                                  end: const Offset(1, 1),
+                                  duration: 400.ms,
+                                  curve: Curves.easeOutBack),
                               const SizedBox(height: 16),
                               Text(
                                 'Stoptify',
@@ -145,7 +150,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                               ),
                             ],
                           ),
-                        ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05, end: 0),
+                        )
+                            .animate()
+                            .fadeIn(duration: 350.ms)
+                            .slideY(begin: -0.05, end: 0),
 
                         const SizedBox(height: 32),
 
@@ -155,7 +163,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFF2E2E38), width: 1.2),
+                            border: Border.all(
+                                color: const Color(0xFF2E2E38), width: 1.2),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.45),
@@ -201,7 +210,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                               ),
                             ],
                           ),
-                        ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.04, end: 0),
+                        )
+                            .animate()
+                            .fadeIn(delay: 100.ms, duration: 400.ms)
+                            .slideY(begin: 0.04, end: 0),
 
                         const SizedBox(height: 24),
 
@@ -253,7 +265,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             ),
           ),
           const SizedBox(height: 22),
-
           MonochromeTextField(
             controller: _loginEmailController,
             label: 'Email address',
@@ -261,14 +272,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             prefixIcon: Icons.mail_outline_rounded,
             keyboardType: TextInputType.emailAddress,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Email is required.';
-              if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email.';
+              if (v == null || v.trim().isEmpty) {
+                return 'Email is required.';
+              }
+              if (!v.contains('@') || !v.contains('.')) {
+                return 'Enter a valid email.';
+              }
               return null;
             },
           ),
-
           const SizedBox(height: 16),
-
           MonochromeTextField(
             controller: _loginPasswordController,
             label: 'Password',
@@ -276,14 +289,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Password is required.';
-              if (v.length < 6) return 'Password must be at least 6 characters.';
+              if (v == null || v.isEmpty) {
+                return 'Password is required.';
+              }
+              if (v.length < 6) {
+                return 'Password must be at least 6 characters.';
+              }
               return null;
             },
           ),
-
           const SizedBox(height: 12),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -299,17 +314,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         height: 18,
                         child: Checkbox(
                           value: _rememberMe,
-                          onChanged: (v) => setState(() => _rememberMe = v ?? true),
+                          onChanged: (v) =>
+                              setState(() => _rememberMe = v ?? true),
                           activeColor: AppColors.buttonPrimary,
                           checkColor: AppColors.buttonText,
-                          side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          side: const BorderSide(
+                              color: AppColors.borderStrong, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4)),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Remember me',
-                        style: AppTypography.body(fontSize: 13, color: AppColors.textSecondary),
+                        style: AppTypography.body(
+                            fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -325,14 +344,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
               ),
             ],
           ),
-
           if (authState.error != null) ...[
             const SizedBox(height: 16),
             _buildErrorBanner(authState.error!),
           ],
-
           const SizedBox(height: 24),
-
           MonochromeButton(
             label: 'Sign In',
             icon: Icons.arrow_forward_rounded,
@@ -369,21 +385,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             ),
           ),
           const SizedBox(height: 22),
-
           MonochromeTextField(
             controller: _registerNameController,
             label: 'Full Name',
             hint: 'Sai Sagar',
             prefixIcon: Icons.person_outline_rounded,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Full name is required.';
-              if (v.trim().length < 2) return 'Full name must be at least 2 characters.';
+              if (v == null || v.trim().isEmpty) {
+                return 'Full name is required.';
+              }
+              if (v.trim().length < 2) {
+                return 'Full name must be at least 2 characters.';
+              }
               return null;
             },
           ),
-
           const SizedBox(height: 16),
-
           MonochromeTextField(
             controller: _registerEmailController,
             label: 'Email address',
@@ -391,14 +408,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             prefixIcon: Icons.mail_outline_rounded,
             keyboardType: TextInputType.emailAddress,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Email is required.';
-              if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email.';
+              if (v == null || v.trim().isEmpty) {
+                return 'Email is required.';
+              }
+              if (!v.contains('@') || !v.contains('.')) {
+                return 'Enter a valid email.';
+              }
               return null;
             },
           ),
-
           const SizedBox(height: 16),
-
           MonochromeTextField(
             controller: _registerPasswordController,
             label: 'Password',
@@ -406,14 +425,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Password is required.';
-              if (v.length < 6) return 'Password must be at least 6 characters.';
+              if (v == null || v.isEmpty) {
+                return 'Password is required.';
+              }
+              if (v.length < 6) {
+                return 'Password must be at least 6 characters.';
+              }
               return null;
             },
           ),
-
           const SizedBox(height: 16),
-
           MonochromeTextField(
             controller: _registerConfirmPasswordController,
             label: 'Confirm Password',
@@ -421,19 +442,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Confirm your password.';
-              if (v != _registerPasswordController.text) return 'Passwords do not match.';
+              if (v == null || v.isEmpty) {
+                return 'Confirm your password.';
+              }
+              if (v != _registerPasswordController.text) {
+                return 'Passwords do not match.';
+              }
               return null;
             },
           ),
-
           if (authState.error != null) ...[
             const SizedBox(height: 16),
             _buildErrorBanner(authState.error!),
           ],
-
           const SizedBox(height: 24),
-
           MonochromeButton(
             label: 'Create Account',
             icon: Icons.arrow_forward_rounded,
@@ -452,16 +474,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       decoration: BoxDecoration(
         color: AppColors.errorRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+            color: AppColors.errorRed.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.errorRed),
+          const Icon(Icons.error_outline_rounded,
+              size: 16, color: AppColors.errorRed),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: AppTypography.body(fontSize: 12.5, color: AppColors.errorRed),
+              style:
+                  AppTypography.body(fontSize: 12.5, color: AppColors.errorRed),
             ),
           ),
         ],

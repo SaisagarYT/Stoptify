@@ -50,12 +50,13 @@ class AppTypography {
     required double fontSize,
     FontWeight weight = FontWeight.w400,
     Color color = AppColors.textPrimary,
+    double height = 1.45,
   }) {
     return GoogleFonts.inter(
       fontSize: fontSize,
       fontWeight: weight,
       color: color,
-      height: 1.45,
+      height: height,
     );
   }
 

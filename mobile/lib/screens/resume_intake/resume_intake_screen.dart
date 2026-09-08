@@ -34,11 +34,11 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
     super.dispose();
   }
 
-  // Picks resume file from device
-  Future<void> _pickFile() async {
+  // Picks resume file of specific extensions from device
+  Future<void> _pickFile(List<String> extensions) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx', 'doc', 'txt'],
+      allowedExtensions: extensions,
     );
     final path = result?.files.single.path;
     if (path != null) {
@@ -167,50 +167,71 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               style: AppTypography.body(
                   fontSize: 14, color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-            // Dropzone Container
-            InkWell(
-              onTap: state.isAnalyzing ? null : _pickFile,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: double.infinity,
+            // Format Button 1: PDF
+            _FormatUploadButton(
+              title: 'Upload PDF Document',
+              subtitle: 'Standard resume (.pdf)',
+              badge: 'PDF',
+              icon: Icons.picture_as_pdf_rounded,
+              disabled: state.isAnalyzing,
+              onTap: () => _pickFile(['pdf']),
+            ),
+
+            // Format Button 2: Word / DOCX
+            _FormatUploadButton(
+              title: 'Upload Word Document',
+              subtitle: 'Microsoft Word (.docx, .doc)',
+              badge: 'DOCX',
+              icon: Icons.article_rounded,
+              disabled: state.isAnalyzing,
+              onTap: () => _pickFile(['docx', 'doc']),
+            ),
+
+            // Format Button 3: Plain Text
+            _FormatUploadButton(
+              title: 'Upload Plain Text',
+              subtitle: 'Plain text file (.txt, .md)',
+              badge: 'TXT',
+              icon: Icons.description_rounded,
+              disabled: state.isAnalyzing,
+              onTap: () => _pickFile(['txt', 'md']),
+            ),
+
+            if (state.isAnalyzing) ...[
+              const SizedBox(height: 8),
+              Container(
                 padding:
-                    const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle, width: 1.2),
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderStrong, width: 1),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceElevated,
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: AppColors.borderStrong, width: 1),
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.buttonPrimary),
                       ),
-                      child: const Icon(Icons.upload_file_rounded,
-                          size: 28, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Tap to upload resume (PDF, DOCX, DOC, TXT)',
-                      style: AppTypography.heading(
-                          fontSize: 15, weight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Supports PDF, Word (.docx, .doc), and plain text',
-                      style: AppTypography.body(
-                          fontSize: 12.5, color: AppColors.textMuted),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Extracting content & generating questions...',
+                        style: AppTypography.body(
+                            fontSize: 13, color: AppColors.textPrimary),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
 
             const SizedBox(height: 20),
 
@@ -219,15 +240,23 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                 const Expanded(child: Divider(color: AppColors.borderSubtle)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Text('OR PASTE TEXT',
+                  child: Text('OR PASTE RESUME TEXT',
                       style: AppTypography.heading(
-                          fontSize: 11, color: AppColors.textMuted)),
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          weight: FontWeight.w700)),
                 ),
                 const Expanded(child: Divider(color: AppColors.borderSubtle)),
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            Text(
+              'No document file on hand? Paste your resume, summary, or LinkedIn text directly:',
+              style: AppTypography.body(
+                  fontSize: 12.5, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
 
             // Text Paste Area
             Container(
@@ -437,6 +466,106 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                   fontSize: 13.5, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Reusable format-specific upload card button
+class _FormatUploadButton extends StatelessWidget {
+  const _FormatUploadButton({
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.icon,
+    required this.onTap,
+    this.disabled = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final String badge;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle, width: 1.2),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderStrong, width: 1),
+                  ),
+                  child: Icon(icon, color: AppColors.textPrimary, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.heading(
+                          fontSize: 14.5,
+                          weight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTypography.body(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.borderSubtle, width: 1),
+                  ),
+                  child: Text(
+                    badge,
+                    style: AppTypography.heading(
+                      fontSize: 11,
+                      weight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 11,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

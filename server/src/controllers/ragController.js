@@ -142,7 +142,14 @@ export const getTopicContent = async (req, res) => {
         .eq("topic_id", topicId);
 
       if (!error && data && data.length > 0) {
-        return sendSuccess(res, data, "Topic content retrieved.");
+        const parsedData = data.map((item) => {
+          try {
+            return { ...item, body: JSON.parse(item.body) };
+          } catch {
+            return item;
+          }
+        });
+        return sendSuccess(res, parsedData, "Topic content retrieved.");
       }
     }
 
@@ -150,5 +157,69 @@ export const getTopicContent = async (req, res) => {
     return sendSuccess(res, contents, "Topic content retrieved.");
   } catch (error) {
     return sendError(res, "Failed to retrieve topic content.", 500, error.message);
+  }
+};
+
+// Dynamically generates a structured learning chapter using AI
+export const generateTopicChapterEndpoint = async (req, res) => {
+  try {
+    const { topicId } = req.params;
+
+    let topic = null;
+    if (isDatabaseConnected && supabase) {
+      const { data } = await supabase
+        .from("topics")
+        .select("*")
+        .eq("id", topicId)
+        .maybeSingle();
+      topic = data;
+    }
+
+    if (!topic) {
+      return sendError(res, "Topic not found.", 404);
+    }
+
+    let ragContext = "";
+    if (isDatabaseConnected && supabase) {
+      const { data: chunks } = await supabase
+        .from("document_chunks")
+        .select("content")
+        .ilike("content", `%${topic.title.split(" ")[0]}%`)
+        .limit(3);
+
+      if (chunks && chunks.length > 0) {
+        ragContext = chunks.map((c) => c.content).join("\n\n");
+      }
+    }
+
+    const { generateChapterContent } = await import("../services/aiService.js");
+    const chapterJson = await generateChapterContent({
+      topicTitle: topic.title,
+      description: topic.description,
+      definitionOfDone: topic.definition_of_done,
+      ragContext,
+    });
+
+    if (isDatabaseConnected && supabase) {
+      await supabase.from("generated_content").insert([
+        {
+          topic_id: topic.id,
+          content_type: "textbook_chapter",
+          body: JSON.stringify(chapterJson),
+          version: "v1.0",
+          metadata: { estimatedMinutes: chapterJson.estimatedMinutes },
+          generated_by_ai_model: config.aiProvider || "qwen",
+        },
+      ]);
+    }
+
+    return sendSuccess(
+      res,
+      chapterJson,
+      "AI dynamic content generated and parsed successfully.",
+      201
+    );
+  } catch (error) {
+    return sendError(res, "Failed to generate dynamic AI content.", 500, error.message);
   }
 };

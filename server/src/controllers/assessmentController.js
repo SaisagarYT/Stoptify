@@ -377,3 +377,73 @@ export const evaluateOralExam = async (req, res) => {
     return sendError(res, "Failed to evaluate oral defense.", 500, error.message);
   }
 };
+
+// Dynamically generates assessment questions using AI and saves to assessments table
+export const generateAssessmentEndpoint = async (req, res) => {
+  try {
+    const { topicId } = req.params;
+
+    let topic = null;
+    if (isDatabaseConnected && supabase) {
+      const { data } = await supabase
+        .from("topics")
+        .select("*")
+        .eq("id", topicId)
+        .maybeSingle();
+      topic = data;
+    }
+
+    if (!topic) {
+      return sendError(res, "Topic not found.", 404);
+    }
+
+    const { generateAssessmentQuestions } = await import("../services/aiService.js");
+    const aiResult = await generateAssessmentQuestions({
+      topicTitle: topic.title,
+      definitionOfDone: topic.definition_of_done,
+    });
+
+    if (isDatabaseConnected && supabase) {
+      if (aiResult.oralProbes && aiResult.oralProbes.length > 0) {
+        await supabase.from("assessments").insert([
+          {
+            topic_id: topic.id,
+            type: "oral_exam",
+            questions: aiResult.oralProbes,
+            grading_rubric: {
+              eli5_keywords: ["core", "concept", "simple"],
+              tradeoff_keywords: ["limitation", "tradeoff", "edge"],
+              application_keywords: ["real", "world", "production"],
+            },
+            passing_score_threshold: 80,
+            time_limit_seconds: 180,
+            is_active: true,
+          },
+        ]);
+      }
+
+      if (aiResult.mcqs && aiResult.mcqs.length > 0) {
+        await supabase.from("assessments").insert([
+          {
+            topic_id: topic.id,
+            type: "mcq",
+            questions: aiResult.mcqs,
+            grading_rubric: {},
+            passing_score_threshold: 80,
+            time_limit_seconds: 120,
+            is_active: true,
+          },
+        ]);
+      }
+    }
+
+    return sendSuccess(
+      res,
+      aiResult,
+      "AI dynamic assessment generated and structured successfully.",
+      201
+    );
+  } catch (error) {
+    return sendError(res, "Failed to generate dynamic assessment.", 500, error.message);
+  }
+};

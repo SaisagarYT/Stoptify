@@ -5,6 +5,7 @@ import {
   submitMcq,
   startOralExam,
   evaluateOralExam,
+  generateAssessmentEndpoint,
 } from "../controllers/assessmentController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
@@ -37,6 +38,7 @@ const mcqSubmitSchema = z.object({
 });
 
 router.get("/topic/:topicId", getTopicAssessments);
+router.post("/generate/:topicId", requireAuth, examLimiter, recordAuditLog("AI_GENERATE_ASSESSMENT"), generateAssessmentEndpoint);
 router.post("/oral/start", requireAuth, examLimiter, validate(oralStartSchema), recordAuditLog("ORAL_EXAM_START"), startOralExam);
 router.post("/oral/evaluate", requireAuth, examLimiter, validate(oralEvaluateSchema), recordAuditLog("ORAL_EXAM_EVALUATE"), evaluateOralExam);
 router.post("/:id/submit-mcq", requireAuth, examLimiter, validate(mcqSubmitSchema), recordAuditLog("MCQ_SUBMIT"), submitMcq);

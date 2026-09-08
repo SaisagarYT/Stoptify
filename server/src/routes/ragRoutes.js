@@ -5,6 +5,7 @@ import {
   getUploads,
   searchRag,
   getTopicContent,
+  generateTopicChapterEndpoint,
 } from "../controllers/ragController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
@@ -29,6 +30,7 @@ const searchSchema = z.object({
 router.post("/upload", requireAuth, ragLimiter, validate(uploadSchema), recordAuditLog("DOCUMENT_UPLOAD"), uploadDocument);
 router.get("/uploads", requireAuth, ragLimiter, getUploads);
 router.post("/search", requireAuth, ragLimiter, validate(searchSchema), recordAuditLog("RAG_SEARCH"), searchRag);
+router.post("/generate/:topicId", requireAuth, ragLimiter, recordAuditLog("AI_GENERATE_CONTENT"), generateTopicChapterEndpoint);
 router.get("/content/:topicId", getTopicContent);
 
 export default router;

@@ -50,9 +50,8 @@ class ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: _resolveBaseUrl(),
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 90),
       ),
     );
 
@@ -96,7 +95,15 @@ class ApiClient {
 
   Future<ApiEnvelope> post(String path,
       {Map<String, dynamic>? body, FormData? formData}) {
-    return _request(() => _dio.post(path, data: formData ?? body));
+    return _request(() => _dio.post(
+          path,
+          data: formData ?? body,
+          options: Options(
+            contentType: formData != null
+                ? 'multipart/form-data'
+                : 'application/json',
+          ),
+        ));
   }
 
   Future<ApiEnvelope> _request(Future<Response> Function() call) async {

@@ -91,12 +91,11 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
         };
       }).toList();
 
-      final audit = await ref
-          .read(resumeAnalysisProvider.notifier)
-          .evaluateDiagnostic(
-            resumeSummary: analysis.candidateSummary,
-            qaAnswers: qaPayload,
-          );
+      final audit =
+          await ref.read(resumeAnalysisProvider.notifier).evaluateDiagnostic(
+                resumeSummary: analysis.candidateSummary,
+                qaAnswers: qaPayload,
+              );
 
       if (mounted) {
         setState(() => _isCalibrating = false);

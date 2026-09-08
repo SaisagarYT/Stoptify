@@ -7,6 +7,7 @@ import {
   finalizeConsultationEndpoint,
   getConsultationSessionEndpoint,
   calibrateFromInquiryEndpoint,
+  evaluateDiagnosticEndpoint,
 } from "../controllers/consultationController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
@@ -92,6 +93,14 @@ router.post(
   validate(finalizeSchema),
   recordAuditLog("ROADMAP_CUSTOM_GENERATE"),
   finalizeConsultationEndpoint
+);
+
+router.post(
+  "/evaluate-diagnostic",
+  requireAuth,
+  consultationLimiter,
+  recordAuditLog("DIAGNOSTIC_EVALUATE"),
+  evaluateDiagnosticEndpoint
 );
 
 router.post(

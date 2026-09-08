@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/api_endpoints.dart';
 import '../models/resume_analysis.dart';
+import '../models/diagnostic_audit.dart';
 import 'core_providers.dart';
 
 class ResumeAnalysisState {
@@ -70,7 +71,29 @@ class ResumeAnalysisNotifier extends StateNotifier<ResumeAnalysisState> {
     state = state.copyWith(selectedDomainCategoryId: domainCategoryId);
   }
 
-  // Calibrates custom roadmap from the 5 diagnostic inquiry answers
+  // Evaluates candidate's 5 diagnostic answers and returns AI Skill Audit
+  Future<DiagnosticAuditResult?> evaluateDiagnostic({
+    required String resumeSummary,
+    required List<Map<String, String>> qaAnswers,
+  }) async {
+    final api = ref.read(apiClientProvider);
+    try {
+      final envelope = await api.post(
+        ApiEndpoints.evaluateDiagnostic,
+        body: {
+          'resumeSummary': resumeSummary,
+          'qaAnswers': qaAnswers,
+        },
+      );
+      return DiagnosticAuditResult.fromJson(
+          envelope.data as Map<String, dynamic>);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return null;
+    }
+  }
+
+  // Calibrates custom roadmap from the chosen domain and diagnostic answers
   Future<String?> calibrateRoadmap({
     required String resumeSummary,
     required String targetDomain,

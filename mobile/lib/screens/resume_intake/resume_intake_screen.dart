@@ -81,7 +81,7 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
         _answerController.text = _userAnswers[_currentQuestionIndex] ?? '';
       });
     } else {
-      // All questions answered — calibrate roadmap
+      // All questions answered — evaluate diagnostic audit
       setState(() => _isCalibrating = true);
 
       final qaPayload = questions.asMap().entries.map((entry) {
@@ -91,21 +91,31 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
         };
       }).toList();
 
-      final targetDomain = analysis.domainCategories.isNotEmpty
-          ? analysis.domainCategories.first.title
-          : 'Software Engineering';
+      final audit = await ref
+          .read(resumeAnalysisProvider.notifier)
+          .evaluateDiagnostic(
+            resumeSummary: analysis.candidateSummary,
+            qaAnswers: qaPayload,
+          );
 
-      final roadmapId =
-          await ref.read(resumeAnalysisProvider.notifier).calibrateRoadmap(
-                resumeSummary: analysis.candidateSummary,
-                targetDomain: targetDomain,
-                qaAnswers: qaPayload,
-              );
-
-      if (roadmapId != null && mounted) {
-        context.go(RoutePaths.roadmapDashboardFor(roadmapId));
-      } else {
+      if (mounted) {
         setState(() => _isCalibrating = false);
+        if (audit != null) {
+          context.push(
+            RoutePaths.diagnosticAudit,
+            extra: {
+              'audit': audit,
+              'resumeSummary': analysis.candidateSummary,
+              'qaAnswers': qaPayload,
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to evaluate diagnostic. Please retry.'),
+            ),
+          );
+        }
       }
     }
   }
@@ -216,8 +226,8 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.buttonPrimary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.buttonPrimary),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -454,13 +464,13 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Calibrating Custom Roadmap',
+              'Evaluating AI Skill Audit',
               style:
                   AppTypography.heading(fontSize: 20, weight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
-              'Synthesizing 3-Tier Definition of Done and explicit Anti-Scope boundaries based on your diagnostic answers…',
+              'Auditing your diagnostic answers against claimed resume skills to detect fragile gaps and eliminate tutorial fluff…',
               textAlign: TextAlign.center,
               style: AppTypography.body(
                   fontSize: 13.5, color: AppColors.textSecondary, height: 1.4),
@@ -542,7 +552,8 @@ class _FormatUploadButton extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(6),

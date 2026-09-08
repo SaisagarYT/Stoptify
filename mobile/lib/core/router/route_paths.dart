@@ -8,6 +8,7 @@ class RoutePaths {
 
   // Screen 2
   static const resumeIntake = '/resume-intake';
+  static const diagnosticAudit = '/diagnostic-audit';
 
   // Screen 3
   static const consultation = '/consultation/:domainId';

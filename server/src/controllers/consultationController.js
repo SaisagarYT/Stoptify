@@ -5,6 +5,7 @@ import {
   analyzeResumeContent,
   conductConsultationTurn,
   synthesizeCalibratedRoadmap,
+  evaluateDiagnosticInquiry,
 } from "../services/aiService.js";
 import {
   roadmaps,
@@ -466,6 +467,42 @@ export const calibrateFromInquiryEndpoint = async (req, res) => {
     );
   } catch (error) {
     return sendError(res, "Failed to calibrate roadmap from inquiry.", 500, error.message);
+  }
+};
+
+// Evaluates candidate's 5 diagnostic answers and generates an AI Skill Audit Report
+export const evaluateDiagnosticEndpoint = async (req, res) => {
+  try {
+    const { resumeSummary, qaAnswers } = req.body;
+
+    if (!qaAnswers || !Array.isArray(qaAnswers) || qaAnswers.length === 0) {
+      return sendError(res, "Diagnostic questions and answers are required.", 400);
+    }
+
+    let skills = [];
+    if (isDatabaseConnected && supabase) {
+      const { data } = await supabase
+        .from("user_skills")
+        .select("*")
+        .eq("user_id", req.user.id);
+      skills = data || [];
+    } else {
+      skills = userSkills.filter((s) => s.userId === req.user.id);
+    }
+
+    const audit = await evaluateDiagnosticInquiry({
+      resumeSummary: resumeSummary || "Software Engineer with diverse experience",
+      qaAnswers,
+      detectedSkills: skills,
+    });
+
+    return sendSuccess(
+      res,
+      audit,
+      "Diagnostic evaluated and audit report generated successfully."
+    );
+  } catch (error) {
+    return sendError(res, "Failed to evaluate diagnostic inquiry.", 500, error.message);
   }
 };
 

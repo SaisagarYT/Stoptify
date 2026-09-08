@@ -376,3 +376,55 @@ Synthesize the complete calibrated roadmap in strict JSON format.`;
   return await callAiChat({ systemPrompt, userPrompt });
 };
 
+// Evaluates user's diagnostic inquiry answers against claimed resume skills to create an audit report
+export const evaluateDiagnosticInquiry = async ({
+  resumeSummary = "",
+  qaAnswers = [],
+  detectedSkills = [],
+}) => {
+  const systemPrompt = `You are Stoptify's Lead Technical Evaluator and Anti-Scope Auditor.
+Evaluate the candidate's diagnostic inquiry answers against their resume claims.
+Your goal is to cut through tutorial fluff and provide an honest, rigorous engineering audit.
+Identify:
+1. "Verified Strengths": Skills where their answers proved genuine hands-on production depth.
+2. "Fragile Gaps": Skills where their answers relied on textbook definitions, generic buzzwords, or lacked trade-off reasoning.
+3. "Anti-Scope Bypass": Redundant beginner topics they have proven they know and should officially SKIP (saving time).
+4. "Recommended Career Tracks": 2 to 3 tailored specialized tracks matching their trajectory (e.g. Backend Lead, Cloud Architect, Systems Engineer).
+
+Output MUST be a valid JSON object matching this exact schema:
+{
+  "verdictTitle": string, // e.g. "Solid Core Engineering with Distributed Scaling Gaps"
+  "readinessScore": number, // 0 to 100 integer representing actual production readiness
+  "confidenceSummary": string, // 2-3 sentences of blunt, constructive feedback on their true level
+  "verifiedStrengths": [
+    { "skill": string, "reason": string } // 2 to 4 validated skills
+  ],
+  "fragileGaps": [
+    { "skill": string, "risk": string } // 2 to 4 critical gaps or tutorial-fluff warning areas
+  ],
+  "antiScopeBypass": {
+    "hoursSaved": number, // estimated total hours of beginner fluff skipped, e.g. 18
+    "bypassPercentage": string, // e.g. "45%"
+    "topicsSkipped": [string] // 3-4 specific beginner topics they do not need to study
+  },
+  "recommendedTracks": [
+    {
+      "trackId": string, // url-friendly identifier
+      "title": string, // clear job/specialization title
+      "matchScore": number, // 0 to 100
+      "tagline": string, // focus summary
+      "estimatedWeeks": number
+    }
+  ]
+}`;
+
+  const userPrompt = `Resume Summary: ${resumeSummary}
+Claimed Skills: ${JSON.stringify(detectedSkills)}
+Candidate Diagnostic Answers:
+${JSON.stringify(qaAnswers, null, 2)}
+
+Evaluate their real engineering depth and produce the complete audit JSON.`;
+
+  return await callAiChat({ systemPrompt, userPrompt });
+};
+

@@ -10,6 +10,8 @@ import '../../screens/consultation/consultation_screen.dart';
 import '../../screens/resume_intake/resume_intake_screen.dart';
 import '../../screens/roadmap_dashboard/roadmap_dashboard_screen.dart';
 import '../../screens/textbook_reader/textbook_reader_screen.dart';
+import '../../screens/diagnostic_audit/diagnostic_audit_screen.dart';
+import '../../models/diagnostic_audit.dart';
 import 'route_paths.dart';
 
 /// Bridges Riverpod's [authProvider] changes into a [Listenable] so
@@ -62,6 +64,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.resumeIntake,
         builder: (context, state) => const ResumeIntakeScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.diagnosticAudit,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return DiagnosticAuditScreen(
+            audit: extra['audit'] as DiagnosticAuditResult,
+            resumeSummary: extra['resumeSummary'] as String,
+            qaAnswers: extra['qaAnswers'] as List<Map<String, String>>,
+          );
+        },
       ),
       GoRoute(
         path: RoutePaths.consultation,

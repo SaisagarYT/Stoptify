@@ -14,11 +14,13 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['full_name'] ?? '',
       email: json['email'] ?? '',
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
-          : DateTime.now(),
+          : (json['created_at'] != null
+              ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+              : DateTime.now()),
     );
   }
 

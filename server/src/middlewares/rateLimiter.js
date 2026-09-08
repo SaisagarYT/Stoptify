@@ -9,8 +9,11 @@ export const rateLimiter = ({
   message = "Too many requests. Please slow down and try again later.",
 } = {}) => {
   return async (req, res, next) => {
-    const rawIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
-    const ipString = Array.isArray(rawIp) ? rawIp[0] : String(rawIp);
+    const rawIp = req.ip || req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "127.0.0.1";
+    let ipString = Array.isArray(rawIp) ? rawIp[0] : String(rawIp);
+    if (ipString === "::1" || ipString === "::ffff:127.0.0.1") {
+      ipString = "127.0.0.1";
+    }
     const identifier = req.user?.id ? `user:${req.user.id}` : `ip:${ipString}`;
 
     const limitResult = checkRateLimit(identifier, windowMs, maxRequests);

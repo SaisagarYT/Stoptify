@@ -9,6 +9,7 @@ import roadmapRoutes from "./routes/roadmapRoutes.js";
 import assessmentRoutes from "./routes/assessmentRoutes.js";
 import ragRoutes from "./routes/ragRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import consultationRoutes from "./routes/consultationRoutes.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/roadmaps", roadmapRoutes);
 app.use("/api/assessments", assessmentRoutes);
 app.use("/api/rag", ragRoutes);
 app.use("/api/system", auditRoutes);
+app.use("/api/consultation", consultationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

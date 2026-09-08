@@ -140,6 +140,47 @@ export const assessments = [
 export const userAssessmentResults = [];
 export const oralExamSessions = [];
 
+export const userUploads = [];
+export const documentChunks = [
+  {
+    id: "doc-chunk-1",
+    upload_id: "seed-curriculum-doc",
+    content: "Idempotence in HTTP means making multiple identical requests has the exact same outcome on the server state as a single request. Methods GET, PUT, and DELETE are idempotent.",
+    chunk_index: 0,
+    source_page: "RFC 7231",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "doc-chunk-2",
+    upload_id: "seed-curriculum-doc",
+    content: "In payment APIs, network retries can accidentally execute twice. Sending a unique Idempotency-Key header ensures the backend executes the charge only once and caches the result for duplicates.",
+    chunk_index: 1,
+    source_page: "Stripe API Design Guidelines",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "doc-chunk-3",
+    upload_id: "seed-curriculum-doc",
+    content: "B-Tree indexes organize row pointers in a balanced hierarchy. Reads achieve logarithmic O(log N) lookup time, but every write triggers tree balance checks and node splits.",
+    chunk_index: 2,
+    source_page: "PostgreSQL Internals",
+    created_at: new Date().toISOString(),
+  }
+];
+
+export const generatedContents = [
+  {
+    id: "gen-content-1",
+    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
+    content_type: "textbook_chapter",
+    body: "# HTTP Protocol & REST Architecture\n\nHTTP defines how clients and servers exchange data. Safe methods do not mutate state (GET). Idempotent methods can be repeated safely (PUT, DELETE). Non-idempotent operations (POST) create new resources on each invocation.",
+    version: "v1.0",
+    metadata: { readingTimeMinutes: 5 },
+    generated_by_ai_model: "gemini-1.5-pro",
+    created_at: new Date().toISOString(),
+  }
+];
+
 export const findUserByEmail = (email) => {
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 };
@@ -208,7 +249,6 @@ export const findUserRoadmap = (userId, roadmapId) => {
   return userRoadmaps.find((ur) => ur.user_id === userId && ur.roadmap_id === roadmapId);
 };
 
-// Enrolls user in roadmap and unlocks first topic
 export const enrollUserInRoadmap = (userId, roadmapId) => {
   const existing = findUserRoadmap(userId, roadmapId);
   if (existing) return existing;
@@ -266,7 +306,6 @@ export const getStudentRoadmapProgress = (userId, roadmapId) => {
   };
 };
 
-// Updates topic status and unlocks subsequent topic if completed
 export const updateStudentTopicStatus = (userId, roadmapId, topicId, status) => {
   const userRoadmap = findUserRoadmap(userId, roadmapId);
   if (!userRoadmap) return null;
@@ -395,4 +434,75 @@ export const recordOralExamSession = ({
 
   oralExamSessions.push(session);
   return session;
+};
+
+// Splits text into discrete chunks along line boundaries
+export const chunkAndStoreDocument = (uploadId, text, source = "Notes") => {
+  const segments = text
+    .split("\n\n")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  const createdChunks = segments.map((content, index) => {
+    const chunk = {
+      id: randomUUID(),
+      upload_id: uploadId,
+      content,
+      chunk_index: index,
+      source_page: source,
+      created_at: new Date().toISOString(),
+    };
+    documentChunks.push(chunk);
+    return chunk;
+  });
+
+  return createdChunks;
+};
+
+// Records user upload and generates its initial document chunks
+export const createUpload = ({ userId, fileName, fileType = "notes", content = "" }) => {
+  const upload = {
+    id: randomUUID(),
+    user_id: userId,
+    file_name: fileName,
+    file_url: `/uploads/${fileName}`,
+    file_type: fileType,
+    file_size_bytes: Buffer.byteLength(content, "utf8"),
+    mime_type: fileType === "pdf" ? "application/pdf" : "text/plain",
+    storage_path: `user_${userId}/${fileName}`,
+    uploaded_at: new Date().toISOString(),
+    processed_at: new Date().toISOString(),
+  };
+
+  userUploads.push(upload);
+
+  const chunks = chunkAndStoreDocument(upload.id, content, fileName);
+  return { upload, chunks };
+};
+
+export const getUserUploads = (userId) => {
+  return userUploads.filter((u) => u.user_id === userId);
+};
+
+// Simple search ranking matching query keywords across document chunks
+export const searchChunks = (query, limit = 5) => {
+  const words = query.toLowerCase().split(" ").filter((w) => w.length > 2);
+
+  const scored = documentChunks.map((chunk) => {
+    const chunkLower = chunk.content.toLowerCase();
+    let score = 0;
+    words.forEach((w) => {
+      if (chunkLower.includes(w)) score += 1;
+    });
+    return { ...chunk, score };
+  });
+
+  return scored
+    .filter((c) => c.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+};
+
+export const getGeneratedContentByTopic = (topicId) => {
+  return generatedContents.filter((g) => g.topic_id === topicId);
 };

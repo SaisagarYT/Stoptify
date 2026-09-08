@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import skillRoutes from "./routes/skillRoutes.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
 import assessmentRoutes from "./routes/assessmentRoutes.js";
+import ragRoutes from "./routes/ragRoutes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/roadmap", roadmapRoutes);
 app.use("/api/roadmaps", roadmapRoutes);
 app.use("/api/assessments", assessmentRoutes);
+app.use("/api/rag", ragRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

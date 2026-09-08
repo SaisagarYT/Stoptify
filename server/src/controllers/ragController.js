@@ -1,4 +1,5 @@
 import { sendSuccess, sendError } from "../utils/response.js";
+import { supabase, isDatabaseConnected } from "../config/db.js";
 import {
   createUpload,
   getUserUploads,
@@ -7,7 +8,7 @@ import {
 } from "../db/inMemoryStore.js";
 
 // Uploads a document and chunks it into semantic segments
-export const uploadDocument = (req, res) => {
+export const uploadDocument = async (req, res) => {
   try {
     const { fileName, fileType = "notes", content } = req.body;
 
@@ -17,6 +18,41 @@ export const uploadDocument = (req, res) => {
       fileType,
       content,
     });
+
+    if (isDatabaseConnected && supabase) {
+      try {
+        const { data: uploadData } = await supabase
+          .from("user_uploads")
+          .insert([
+            {
+              id: result.upload.id,
+              user_id: req.user.id,
+              file_name: fileName,
+              file_url: result.upload.file_url,
+              file_type: fileType,
+              file_size_bytes: result.upload.file_size_bytes,
+              mime_type: result.upload.mime_type,
+              storage_path: result.upload.storage_path,
+            },
+          ])
+          .select()
+          .single();
+
+        if (uploadData && result.chunks.length > 0) {
+          const chunkInserts = result.chunks.map((c) => ({
+            id: c.id,
+            upload_id: result.upload.id,
+            content: c.content,
+            chunk_index: c.chunk_index,
+            source_page: c.source_page,
+          }));
+
+          await supabase.from("document_chunks").insert(chunkInserts);
+        }
+      } catch (dbErr) {
+        // Fallback to in-memory store
+      }
+    }
 
     return sendSuccess(
       res,
@@ -34,8 +70,19 @@ export const uploadDocument = (req, res) => {
 };
 
 // Lists all documents uploaded by the authenticated user
-export const getUploads = (req, res) => {
+export const getUploads = async (req, res) => {
   try {
+    if (isDatabaseConnected && supabase) {
+      const { data, error } = await supabase
+        .from("user_uploads")
+        .select("*")
+        .eq("user_id", req.user.id);
+
+      if (!error && data && data.length > 0) {
+        return sendSuccess(res, data, "User uploads retrieved.");
+      }
+    }
+
     const uploads = getUserUploads(req.user.id);
     return sendSuccess(res, uploads, "User uploads retrieved.");
   } catch (error) {
@@ -44,30 +91,64 @@ export const getUploads = (req, res) => {
 };
 
 // Searches document chunks for relevant context to ground AI prompts
-export const searchRag = (req, res) => {
+export const searchRag = async (req, res) => {
   try {
     const { query, limit = 5 } = req.body;
-    const matches = searchChunks(query, limit);
 
-    return sendSuccess(res, {
-      query,
-      matchCount: matches.length,
-      chunks: matches,
-    }, "Semantic context retrieved.");
+    if (isDatabaseConnected && supabase) {
+      const { data, error } = await supabase
+        .from("document_chunks")
+        .select("*")
+        .ilike("content", `%${query}%`)
+        .limit(limit);
+
+      if (!error && data && data.length > 0) {
+        return sendSuccess(
+          res,
+          {
+            query,
+            matchCount: data.length,
+            chunks: data,
+          },
+          "Semantic context retrieved."
+        );
+      }
+    }
+
+    const matches = searchChunks(query, limit);
+    return sendSuccess(
+      res,
+      {
+        query,
+        matchCount: matches.length,
+        chunks: matches,
+      },
+      "Semantic context retrieved."
+    );
   } catch (error) {
     return sendError(res, "RAG search failed.", 500, error.message);
   }
 };
 
 // Retrieves AI-generated textbook or diagram content for a topic
-export const getTopicContent = (req, res) => {
+export const getTopicContent = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const contents = getGeneratedContentByTopic(topicId);
 
+    if (isDatabaseConnected && supabase) {
+      const { data, error } = await supabase
+        .from("generated_content")
+        .select("*")
+        .eq("topic_id", topicId);
+
+      if (!error && data && data.length > 0) {
+        return sendSuccess(res, data, "Topic content retrieved.");
+      }
+    }
+
+    const contents = getGeneratedContentByTopic(topicId);
     return sendSuccess(res, contents, "Topic content retrieved.");
   } catch (error) {
     return sendError(res, "Failed to retrieve topic content.", 500, error.message);
   }
 };
-

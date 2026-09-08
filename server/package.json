@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test": "node tests/verify_foundation.js && node tests/verify_auth.js && node tests/verify_curriculum.js && node tests/verify_assessment.js && node tests/verify_rag.js && node tests/verify_audit_ratelimit.js"
   },
   "keywords": [],
   "author": "",

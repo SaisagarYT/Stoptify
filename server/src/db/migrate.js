@@ -50,6 +50,5 @@ async function runMigration() {
     process.exit(1);
   }
 }
-
 runMigration();
 

@@ -8,8 +8,12 @@ import {
 } from "../controllers/assessmentController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
+import { rateLimiter } from "../middlewares/rateLimiter.js";
+import { recordAuditLog } from "../middlewares/auditMiddleware.js";
 
 const router = express.Router();
+
+const examLimiter = rateLimiter({ windowMs: 60000, maxRequests: 30 });
 
 const oralStartSchema = z.object({
   topicId: z.string().min(1, { message: "Topic ID is required." }),
@@ -33,8 +37,8 @@ const mcqSubmitSchema = z.object({
 });
 
 router.get("/topic/:topicId", getTopicAssessments);
-router.post("/oral/start", requireAuth, validate(oralStartSchema), startOralExam);
-router.post("/oral/evaluate", requireAuth, validate(oralEvaluateSchema), evaluateOralExam);
-router.post("/:id/submit-mcq", requireAuth, validate(mcqSubmitSchema), submitMcq);
+router.post("/oral/start", requireAuth, examLimiter, validate(oralStartSchema), recordAuditLog("ORAL_EXAM_START"), startOralExam);
+router.post("/oral/evaluate", requireAuth, examLimiter, validate(oralEvaluateSchema), recordAuditLog("ORAL_EXAM_EVALUATE"), evaluateOralExam);
+router.post("/:id/submit-mcq", requireAuth, examLimiter, validate(mcqSubmitSchema), recordAuditLog("MCQ_SUBMIT"), submitMcq);
 
 export default router;

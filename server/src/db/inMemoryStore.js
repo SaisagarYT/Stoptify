@@ -2,9 +2,24 @@ import { randomUUID } from "crypto";
 
 export const users = [];
 export const userSkills = [];
-export const roadmaps = [
-  {
-    id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+export const roadmaps = [];
+export const topics = [];
+export const userRoadmaps = [];
+export const userTopicProgress = [];
+export const assessments = [];
+export const userAssessmentResults = [];
+export const oralExamSessions = [];
+export const userUploads = [];
+export const documentChunks = [];
+export const generatedContents = [];
+
+// Populates fallback memory cache matching seeds.sql
+export const loadDefaultSeeds = () => {
+  if (roadmaps.length > 0) return;
+
+  const defaultRoadmapId = "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d";
+  roadmaps.push({
+    id: defaultRoadmapId,
     title: "Backend Engineering & Distributed Systems",
     slug: "backend-mastery",
     target_career: "Backend Engineer / Cloud Architect",
@@ -14,172 +29,139 @@ export const roadmaps = [
     is_public: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }
-];
+  });
 
-export const topics = [
-  {
-    id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
-    roadmap_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
-    title: "HTTP Protocol & RESTful API Architecture",
-    slug: "http-protocol-rest-api",
-    description: "Master HTTP status codes, headers, and idempotent vs non-idempotent methods.",
-    order_index: 1,
-    estimated_duration_min: "30 min",
-    definition_of_done: {
-      conceptual: "Explain idempotent vs non-idempotent HTTP methods in plain English.",
-      practical: "Build an Express endpoint with validation using proper status codes.",
-      anti_scope: "Do not study HTTP/3, gRPC, or QUIC internals yet.",
+  const topic1Id = "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e";
+  topics.push(
+    {
+      id: topic1Id,
+      roadmap_id: defaultRoadmapId,
+      title: "HTTP Protocol & RESTful API Architecture",
+      slug: "http-protocol-rest-api",
+      description: "Master HTTP status codes, headers, and idempotent vs non-idempotent methods.",
+      order_index: 1,
+      estimated_duration_min: "30 min",
+      definition_of_done: {
+        conceptual: "Explain idempotent vs non-idempotent HTTP methods in plain English.",
+        practical: "Build an Express endpoint with validation using proper status codes.",
+        anti_scope: "Do not study HTTP/3, gRPC, or QUIC internals yet.",
+      },
+      anti_scope: ["HTTP/3", "gRPC", "QUIC internals"],
+      prerequisites_ids: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
-    anti_scope: ["HTTP/3", "gRPC", "QUIC internals"],
-    prerequisites_ids: [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "c3d4e5f6-a1b2-4c5d-0e1f-2a3b4c5d6e7f",
-    roadmap_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
-    title: "Relational Database Indexing & Query Plans",
-    slug: "database-indexing-query-plans",
-    description: "Understand B-tree indexes, write overhead, and EXPLAIN ANALYZE execution plans.",
-    order_index: 2,
-    estimated_duration_min: "45 min",
-    definition_of_done: {
-      conceptual: "Explain B-tree index lookups vs full table scans in under 2 minutes.",
-      practical: "Run an EXPLAIN ANALYZE query to verify index scan vs sequence scan.",
-      anti_scope: "Do not write custom GiST or SP-GiST index implementations yet.",
+    {
+      id: "c3d4e5f6-a1b2-4c5d-0e1f-2a3b4c5d6e7f",
+      roadmap_id: defaultRoadmapId,
+      title: "Relational Database Indexing & Query Plans",
+      slug: "database-indexing-query-plans",
+      description: "Understand B-tree indexes, write overhead, and EXPLAIN ANALYZE execution plans.",
+      order_index: 2,
+      estimated_duration_min: "45 min",
+      definition_of_done: {
+        conceptual: "Explain B-tree index lookups vs full table scans in under 2 minutes.",
+        practical: "Run an EXPLAIN ANALYZE query to verify index scan vs sequence scan.",
+        anti_scope: "Do not write custom GiST or SP-GiST index implementations yet.",
+      },
+      anti_scope: ["GiST custom indexes", "SP-GiST"],
+      prerequisites_ids: [topic1Id],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
-    anti_scope: ["GiST custom indexes", "SP-GiST"],
-    prerequisites_ids: ["b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e"],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "d4e5f6a1-b2c3-4d5e-1f2a-3b4c5d6e7f8a",
-    roadmap_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
-    title: "Caching Strategies & Redis Fundamentals",
-    slug: "caching-strategies-redis",
-    description: "Learn Cache-Aside and Write-Through caching patterns with TTL expiry.",
-    order_index: 3,
-    estimated_duration_min: "40 min",
-    definition_of_done: {
-      conceptual: "Articulate Cache-Aside vs Write-Through caching patterns and trade-offs.",
-      practical: "Implement a Redis caching layer around a database query with TTL.",
-      anti_scope: "Avoid multi-region Redis Cluster sharding at this stage.",
+    {
+      id: "d4e5f6a1-b2c3-4d5e-1f2a-3b4c5d6e7f8a",
+      roadmap_id: defaultRoadmapId,
+      title: "Caching Strategies & Redis Fundamentals",
+      slug: "caching-strategies-redis",
+      description: "Learn Cache-Aside and Write-Through caching patterns with TTL expiry.",
+      order_index: 3,
+      estimated_duration_min: "40 min",
+      definition_of_done: {
+        conceptual: "Articulate Cache-Aside vs Write-Through caching patterns and trade-offs.",
+        practical: "Implement a Redis caching layer around a database query with TTL.",
+        anti_scope: "Avoid multi-region Redis Cluster sharding at this stage.",
+      },
+      anti_scope: ["Redis Cluster multi-region", "Raft consensus"],
+      prerequisites_ids: ["c3d4e5f6-a1b2-4c5d-0e1f-2a3b4c5d6e7f"],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  );
+
+  assessments.push(
+    {
+      id: "e5f6a1b2-c3d4-4e5f-2a3b-4c5d6e7f8a9b",
+      topic_id: topic1Id,
+      type: "oral_exam",
+      questions: [
+        {
+          tier: "eli5_core",
+          question: "In plain English, what does it mean for an HTTP method to be idempotent? Give an example.",
+          duration_seconds: 30,
+        },
+        {
+          tier: "tradeoff_edge_case",
+          question: "If PUT is idempotent and POST is not, why not use PUT for every data creation request?",
+          duration_seconds: 45,
+        },
+        {
+          tier: "real_world_application",
+          question: "A user clicks Pay Now twice within 100ms. How do you prevent charging them twice?",
+          duration_seconds: 45,
+        },
+      ],
+      grading_rubric: {
+        eli5_keywords: ["state", "same", "repeat"],
+        tradeoff_keywords: ["uri", "identifier", "resource"],
+        application_keywords: ["idempotency key", "token", "unique constraint"],
+      },
+      passing_score_threshold: 80,
+      time_limit_seconds: 180,
+      is_active: true,
+      created_at: new Date().toISOString(),
     },
-    anti_scope: ["Redis Cluster multi-region", "Raft consensus"],
-    prerequisites_ids: ["c3d4e5f6-a1b2-4c5d-0e1f-2a3b4c5d6e7f"],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+    {
+      id: "f6a1b2c3-d4e5-4f6a-3b4c-5d6e7f8a9b0c",
+      topic_id: topic1Id,
+      type: "mcq",
+      questions: [
+        {
+          id: "q1",
+          prompt: "Which of the following HTTP methods is considered idempotent by specification?",
+          options: ["POST", "PATCH", "PUT", "CONNECT"],
+          correct_index: 2,
+          explanation: "PUT is idempotent because multiple identical requests have the exact same server state as a single request.",
+        },
+        {
+          id: "q2",
+          prompt: "Which status code should be returned when a resource is successfully created?",
+          options: ["200 OK", "201 Created", "204 No Content", "202 Accepted"],
+          correct_index: 1,
+          explanation: "201 Created signals that the request succeeded and a new resource was created.",
+        },
+      ],
+      grading_rubric: {},
+      passing_score_threshold: 80,
+      time_limit_seconds: 120,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    }
+  );
 
-export const userRoadmaps = [];
-export const userTopicProgress = [];
-
-export const assessments = [
-  {
-    id: "e5f6a1b2-c3d4-4e5f-2a3b-4c5d6e7f8a9b",
-    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
-    type: "oral_exam",
-    questions: [
-      {
-        tier: "eli5_core",
-        question: "In plain English, what does it mean for an HTTP method to be idempotent? Give an example.",
-        duration_seconds: 30,
-      },
-      {
-        tier: "tradeoff_edge_case",
-        question: "If PUT is idempotent and POST is not, why not use PUT for every data creation request?",
-        duration_seconds: 45,
-      },
-      {
-        tier: "real_world_application",
-        question: "A user clicks Pay Now twice within 100ms. How do you prevent charging them twice?",
-        duration_seconds: 45,
-      },
-    ],
-    grading_rubric: {
-      eli5_keywords: ["same state", "repeat", "side effect"],
-      tradeoff_keywords: ["uri", "identifier", "resource"],
-      application_keywords: ["idempotency key", "token", "unique constraint"],
-    },
-    passing_score_threshold: 80,
-    time_limit_seconds: 180,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "f6a1b2c3-d4e5-4f6a-3b4c-5d6e7f8a9b0c",
-    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
-    type: "mcq",
-    questions: [
-      {
-        id: "q1",
-        prompt: "Which of the following HTTP methods is considered idempotent by specification?",
-        options: ["POST", "PATCH", "PUT", "CONNECT"],
-        correct_index: 2,
-        explanation: "PUT is idempotent because multiple identical requests have the exact same server state as a single request.",
-      },
-      {
-        id: "q2",
-        prompt: "Which status code should be returned when a resource is successfully created?",
-        options: ["200 OK", "201 Created", "204 No Content", "202 Accepted"],
-        correct_index: 1,
-        explanation: "201 Created signals that the request succeeded and a new resource was created.",
-      },
-    ],
-    grading_rubric: {},
-    passing_score_threshold: 80,
-    time_limit_seconds: 120,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  }
-];
-
-export const userAssessmentResults = [];
-export const oralExamSessions = [];
-
-export const userUploads = [];
-export const documentChunks = [
-  {
-    id: "doc-chunk-1",
-    upload_id: "seed-curriculum-doc",
-    content: "Idempotence in HTTP means making multiple identical requests has the exact same outcome on the server state as a single request. Methods GET, PUT, and DELETE are idempotent.",
-    chunk_index: 0,
-    source_page: "RFC 7231",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "doc-chunk-2",
-    upload_id: "seed-curriculum-doc",
-    content: "In payment APIs, network retries can accidentally execute twice. Sending a unique Idempotency-Key header ensures the backend executes the charge only once and caches the result for duplicates.",
-    chunk_index: 1,
-    source_page: "Stripe API Design Guidelines",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "doc-chunk-3",
-    upload_id: "seed-curriculum-doc",
-    content: "B-Tree indexes organize row pointers in a balanced hierarchy. Reads achieve logarithmic O(log N) lookup time, but every write triggers tree balance checks and node splits.",
-    chunk_index: 2,
-    source_page: "PostgreSQL Internals",
-    created_at: new Date().toISOString(),
-  }
-];
-
-export const generatedContents = [
-  {
+  generatedContents.push({
     id: "gen-content-1",
-    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
+    topic_id: topic1Id,
     content_type: "textbook_chapter",
     body: "# HTTP Protocol & REST Architecture\n\nHTTP defines how clients and servers exchange data. Safe methods do not mutate state (GET). Idempotent methods can be repeated safely (PUT, DELETE). Non-idempotent operations (POST) create new resources on each invocation.",
     version: "v1.0",
     metadata: { readingTimeMinutes: 5 },
     generated_by_ai_model: "gemini-1.5-pro",
     created_at: new Date().toISOString(),
-  }
-];
+  });
+};
+
+loadDefaultSeeds();
 
 export const findUserByEmail = (email) => {
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -505,4 +487,63 @@ export const searchChunks = (query, limit = 5) => {
 
 export const getGeneratedContentByTopic = (topicId) => {
   return generatedContents.filter((g) => g.topic_id === topicId);
+};
+
+export const systemAuditLogs = [];
+export const apiRateLimits = new Map();
+
+// Creates and records an audit log entry
+export const createAuditLog = ({ userId = null, actionType, payload = {}, ipAddress = "127.0.0.1", userAgent = "unknown" }) => {
+  const entry = {
+    id: randomUUID(),
+    user_id: userId,
+    action_type: actionType,
+    payload,
+    ip_address: ipAddress,
+    user_agent: userAgent,
+    created_at: new Date().toISOString(),
+  };
+  systemAuditLogs.unshift(entry);
+  return entry;
+};
+
+// Retrieves audit logs optionally filtered by user ID
+export const getAuditLogs = (userId = null, limit = 50) => {
+  if (userId) {
+    return systemAuditLogs.filter((log) => log.user_id === userId).slice(0, limit);
+  }
+  return systemAuditLogs.slice(0, limit);
+};
+
+// Checks and updates request counts within a sliding time window
+export const checkRateLimit = (identifier, windowMs = 60000, maxRequests = 100) => {
+  const now = Date.now();
+  const record = apiRateLimits.get(identifier);
+
+  if (!record || now - record.windowStart > windowMs) {
+    const freshRecord = { count: 1, windowStart: now };
+    apiRateLimits.set(identifier, freshRecord);
+    return {
+      allowed: true,
+      remaining: maxRequests - 1,
+      resetMs: windowMs,
+    };
+  }
+
+  if (record.count >= maxRequests) {
+    const resetMs = Math.max(0, windowMs - (now - record.windowStart));
+    return {
+      allowed: false,
+      remaining: 0,
+      resetMs,
+    };
+  }
+
+  record.count += 1;
+  const resetMs = Math.max(0, windowMs - (now - record.windowStart));
+  return {
+    allowed: true,
+    remaining: maxRequests - record.count,
+    resetMs,
+  };
 };

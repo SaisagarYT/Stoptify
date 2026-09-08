@@ -3,8 +3,12 @@ import { z } from "zod";
 import { register, login, getMe } from "../controllers/authController.js";
 import { validate } from "../middlewares/validate.js";
 import { requireAuth } from "../middlewares/authMiddleware.js";
+import { rateLimiter } from "../middlewares/rateLimiter.js";
+import { recordAuditLog } from "../middlewares/auditMiddleware.js";
 
 const router = express.Router();
+
+const authLimiter = rateLimiter({ windowMs: 60000, maxRequests: 20 });
 
 const registerSchema = z.object({
   email: z.string().email({ message: "Must be a valid email address." }),
@@ -17,8 +21,8 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-router.post("/register", validate(registerSchema), register);
-router.post("/login", validate(loginSchema), login);
+router.post("/register", authLimiter, validate(registerSchema), recordAuditLog("USER_REGISTER"), register);
+router.post("/login", authLimiter, validate(loginSchema), recordAuditLog("USER_LOGIN"), login);
 router.get("/me", requireAuth, getMe);
 
 export default router;

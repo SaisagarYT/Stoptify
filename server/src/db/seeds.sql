@@ -102,3 +102,46 @@ INSERT INTO assessments (
     80,
     180
 ) ON CONFLICT DO NOTHING;
+
+-- Insert sample MCQ assessment for topic 1
+INSERT INTO assessments (
+    id, topic_id, type, questions, grading_rubric, passing_score_threshold, time_limit_seconds
+) VALUES (
+    'f6a1b2c3-d4e5-4f6a-3b4c-5d6e7f8a9b0c',
+    'b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e',
+    'mcq',
+    '[
+        {
+            "id": "q1",
+            "prompt": "Which of the following HTTP methods is considered idempotent by specification?",
+            "options": ["POST", "PATCH", "PUT", "CONNECT"],
+            "correct_index": 2,
+            "explanation": "PUT is idempotent because multiple identical requests have the exact same server state as a single request."
+        },
+        {
+            "id": "q2",
+            "prompt": "Which status code should be returned when a resource is successfully created?",
+            "options": ["200 OK", "201 Created", "204 No Content", "202 Accepted"],
+            "correct_index": 1,
+            "explanation": "201 Created signals that the request succeeded and a new resource was created."
+        }
+    ]'::jsonb,
+    '{}'::jsonb,
+    80,
+    120
+) ON CONFLICT DO NOTHING;
+
+-- Insert sample AI-generated textbook chapter
+INSERT INTO generated_content (
+    id, topic_id, content_type, body, version, metadata, generated_by_ai_model
+) VALUES (
+    '7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d',
+    'b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e',
+    'textbook_chapter',
+    '# HTTP Protocol & REST Architecture
+
+HTTP defines how clients and servers exchange data. Safe methods do not mutate state (GET). Idempotent methods can be repeated safely (PUT, DELETE). Non-idempotent operations (POST) create new resources on each invocation.',
+    'v1.0',
+    '{"readingTimeMinutes": 5}'::jsonb,
+    'gemini-1.5-pro'
+) ON CONFLICT DO NOTHING;

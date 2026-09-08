@@ -28,3 +28,7 @@ Thumbs.db
 build/
 ios/.symlinks/
 
+# Test suites
+tests/
+server/tests/
+

@@ -35,6 +35,7 @@ export const register = async (req, res) => {
     });
 
     const token = generateToken(newUser);
+    req.user = { id: newUser.id, email: newUser.email, fullName: newUser.full_name };
 
     return sendSuccess(
       res,
@@ -64,6 +65,7 @@ export const login = async (req, res) => {
 
     user.last_login_at = new Date().toISOString();
     const token = generateToken(user);
+    req.user = { id: user.id, email: user.email, fullName: user.full_name };
 
     return sendSuccess(
       res,

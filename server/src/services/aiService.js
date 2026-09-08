@@ -153,6 +153,15 @@ Output MUST be a valid JSON object matching this exact schema:
       "duration_seconds": 45,
       "pass_criteria": string
     }
+  ],
+  "orderingChallenges": [
+    {
+      "id": string,
+      "instruction": string,
+      "scrambledItems": [string],
+      "correctSequence": [string],
+      "explanation": string
+    }
   ]
 }`;
 
@@ -162,7 +171,7 @@ Definition of Done:
 - Practical: ${definitionOfDone.practical || "Hands-on implementation"}
 - Anti-Scope: ${definitionOfDone.anti_scope || "Keep focused"}
 
-Generate 2 MCQs and 3 progressive Feynman oral defense probes in strict JSON format.`;
+Generate 2 MCQs, 3 progressive Feynman oral defense probes, and 1 sequence ordering challenge in strict JSON format.`;
 
   return await callAiChat({ systemPrompt, userPrompt });
 };
@@ -269,6 +278,12 @@ Output MUST be a valid JSON object matching this exact schema:
       "description": string,
       "orderIndex": number, // starting from 1
       "estimatedDurationMin": string, // e.g. "45 min"
+      "subtopics": [string], // array of 3-4 specific concepts covered
+      "realWorldExample": {
+        "company": string, // e.g. "Uber", "Netflix", "Stripe"
+        "scenario": string, // concrete real-world engineering challenge
+        "takeaway": string // how mastering this topic solved the problem
+      },
       "definitionOfDone": {
         "conceptual": string, // plain English ELI5 explanation required to pass
         "practical": string, // concrete exercise, query, or build task

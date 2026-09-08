@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   getTopicAssessments,
   submitMcq,
+  submitSequenceOrdering,
   startOralExam,
   evaluateOralExam,
   generateAssessmentEndpoint,
@@ -37,10 +38,19 @@ const mcqSubmitSchema = z.object({
   })),
 });
 
+const orderingSubmitSchema = z.object({
+  answers: z.array(z.object({
+    challengeId: z.string().optional(),
+    challengeIndex: z.number().optional(),
+    submittedSequence: z.array(z.string()),
+  })),
+});
+
 router.get("/topic/:topicId", getTopicAssessments);
 router.post("/generate/:topicId", requireAuth, examLimiter, recordAuditLog("AI_GENERATE_ASSESSMENT"), generateAssessmentEndpoint);
 router.post("/oral/start", requireAuth, examLimiter, validate(oralStartSchema), recordAuditLog("ORAL_EXAM_START"), startOralExam);
 router.post("/oral/evaluate", requireAuth, examLimiter, validate(oralEvaluateSchema), recordAuditLog("ORAL_EXAM_EVALUATE"), evaluateOralExam);
 router.post("/:id/submit-mcq", requireAuth, examLimiter, validate(mcqSubmitSchema), recordAuditLog("MCQ_SUBMIT"), submitMcq);
+router.post("/:id/submit-ordering", requireAuth, examLimiter, validate(orderingSubmitSchema), recordAuditLog("ORDERING_SUBMIT"), submitSequenceOrdering);
 
 export default router;

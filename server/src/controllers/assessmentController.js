@@ -187,6 +187,110 @@ export const submitMcq = async (req, res) => {
   }
 };
 
+// Submits and evaluates a drag-and-drop / sequence ordering assessment
+export const submitSequenceOrdering = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { answers } = req.body;
+
+    let assessment = null;
+    if (isDatabaseConnected && supabase) {
+      const { data } = await supabase
+        .from("assessments")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      assessment = data;
+    }
+
+    if (!assessment) {
+      assessment = getAssessmentById(id);
+    }
+
+    if (!assessment || assessment.type !== "sequence_ordering") {
+      return sendError(res, "Sequence ordering assessment not found.", 404);
+    }
+
+    const challenges = assessment.questions || [];
+    let correctCount = 0;
+    const itemFeedback = [];
+
+    challenges.forEach((ch, idx) => {
+      const userAns = (answers || []).find(
+        (a) => a.challengeId === ch.id || a.challengeIndex === idx
+      );
+      const submittedSeq = userAns?.submittedSequence || [];
+      const correctSeq = ch.correctSequence || [];
+
+      const isCorrect =
+        submittedSeq.length === correctSeq.length &&
+        submittedSeq.every((val, i) => val === correctSeq[i]);
+
+      if (isCorrect) correctCount += 1;
+
+      itemFeedback.push({
+        challengeId: ch.id,
+        isCorrect,
+        correctSequence: correctSeq,
+        explanation: ch.explanation || "Review the step sequence.",
+      });
+    });
+
+    const score = challenges.length > 0 ? Math.round((correctCount / challenges.length) * 100) : 0;
+    const passed = score >= assessment.passing_score_threshold;
+
+    const progressRecord = getUserTopicProgressRecord(req.user.id, assessment.topic_id);
+    const userTopicProgressId = progressRecord?.progress?.id || req.user.id;
+
+    const resultRecord = recordAssessmentResult({
+      userTopicProgressId,
+      assessmentId: assessment.id,
+      score,
+      feedback: { itemFeedback },
+      userAnswersSnapshot: answers,
+      passed,
+    });
+
+    if (isDatabaseConnected && supabase) {
+      try {
+        await supabase.from("user_assessment_results").insert([
+          {
+            user_topic_progress_id: userTopicProgressId,
+            assessment_id: assessment.id,
+            score,
+            feedback: { itemFeedback },
+            user_answers_snapshot: answers,
+            passed,
+          },
+        ]);
+      } catch (dbErr) {
+        // Fallback to local
+      }
+    }
+
+    if (passed) {
+      await completeTopicProgress(req.user.id, assessment.topic_id);
+    }
+
+    return sendSuccess(
+      res,
+      {
+        score,
+        passed,
+        passingThreshold: assessment.passing_score_threshold,
+        resultId: resultRecord.id,
+        itemFeedback,
+        remediationNeeded: !passed,
+      },
+      passed
+        ? "Sequence ordering passed! Next milestone unlocked."
+        : "Sequence ordering incomplete. Review feedback."
+    );
+  } catch (error) {
+    return sendError(res, "Failed to evaluate sequence ordering.", 500, error.message);
+  }
+};
+
 // Initiates a 3-probe Feynman oral defense session
 export const startOralExam = async (req, res) => {
   try {
@@ -428,6 +532,20 @@ export const generateAssessmentEndpoint = async (req, res) => {
             topic_id: topic.id,
             type: "mcq",
             questions: aiResult.mcqs,
+            grading_rubric: {},
+            passing_score_threshold: 80,
+            time_limit_seconds: 120,
+            is_active: true,
+          },
+        ]);
+      }
+
+      if (aiResult.orderingChallenges && aiResult.orderingChallenges.length > 0) {
+        await supabase.from("assessments").insert([
+          {
+            topic_id: topic.id,
+            type: "sequence_ordering",
+            questions: aiResult.orderingChallenges,
             grading_rubric: {},
             passing_score_threshold: 80,
             time_limit_seconds: 120,

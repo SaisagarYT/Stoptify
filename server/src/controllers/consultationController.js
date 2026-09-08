@@ -229,10 +229,13 @@ export const finalizeConsultationEndpoint = async (req, res) => {
                 description: t.description,
                 order_index: t.orderIndex,
                 estimated_duration_min: t.estimatedDurationMin || "45 min",
-                definition_of_done: t.definitionOfDone || {
-                  conceptual: "Explain core concept clearly",
-                  practical: "Complete implementation exercise",
-                  anti_scope: "Do not explore edge features yet",
+                definition_of_done: {
+                  conceptual: t.definitionOfDone?.conceptual || "Explain core concept clearly",
+                  practical: t.definitionOfDone?.practical || "Complete implementation exercise",
+                  anti_scope: t.definitionOfDone?.anti_scope || "Do not explore edge features yet",
+                  subtopics: t.subtopics || [],
+                  real_world_example: t.realWorldExample || null,
+                  when_to_stop: t.whenToStopCriteria || "Master core DoD to pass.",
                 },
                 anti_scope: t.antiScopeList || [],
                 prerequisites_ids: [],

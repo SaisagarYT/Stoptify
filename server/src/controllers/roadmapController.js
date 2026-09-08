@@ -187,12 +187,53 @@ export const getRoadmapProgress = async (req, res) => {
             };
           });
 
+          const completedRows = (progressRows || []).filter((p) => p.status === "completed");
+          const completedCount = completedRows.length;
+
+          let totalEstMinutes = 0;
+          let completedEstMinutes = 0;
+          (allTopics || []).forEach((t) => {
+            const mins = parseInt(t.estimated_duration_min) || 45;
+            totalEstMinutes += mins;
+            const isDone = completedRows.some((p) => p.topic_id === t.id);
+            if (isDone) completedEstMinutes += mins;
+          });
+
+          const startedAt = enrollment.started_at ? new Date(enrollment.started_at).getTime() : Date.now();
+          const elapsedMinutes = Math.max(1, Math.round((Date.now() - startedAt) / (60 * 1000)));
+
+          let velocityMultiplier = 1.0;
+          if (completedCount > 0 && elapsedMinutes > 0) {
+            velocityMultiplier = Number((completedEstMinutes / elapsedMinutes).toFixed(1));
+            if (velocityMultiplier < 0.5) velocityMultiplier = 0.5;
+            if (velocityMultiplier > 5.0) velocityMultiplier = 5.0;
+          }
+
+          const remainingMinutes = Math.max(0, totalEstMinutes - completedEstMinutes);
+          const adjustedRemainingMinutes = Math.round(remainingMinutes / velocityMultiplier);
+          const projectedCompletionDate = new Date(Date.now() + adjustedRemainingMinutes * 60 * 1000).toISOString();
+          const isAccelerated = velocityMultiplier >= 1.3;
+          const daysAhead = isAccelerated ? Math.max(1, Math.round((remainingMinutes - adjustedRemainingMinutes) / (60 * 24))) : 0;
+
+          const velocityMetrics = {
+            velocityMultiplier: `${velocityMultiplier}x`,
+            learningPace: isAccelerated ? "Accelerated (Fast-Track)" : "Steady Pace",
+            completedMinutes: completedEstMinutes,
+            totalEstimatedMinutes: totalEstMinutes,
+            projectedCompletionDate,
+            daysAheadOfSchedule: daysAhead,
+            summaryMessage: isAccelerated
+              ? `You are learning ${velocityMultiplier}x faster than standard pace! Estimated completion: ${new Date(projectedCompletionDate).toLocaleDateString()}.`
+              : "Steady progress. Master each Definition of Done to unlock the next milestone.",
+          };
+
           return sendSuccess(
             res,
             {
               roadmap,
               enrollment,
               topics: topicDetails,
+              velocityMetrics,
             },
             "Roadmap progress retrieved."
           );
@@ -210,7 +251,20 @@ export const getRoadmapProgress = async (req, res) => {
       return sendError(res, "User is not enrolled in this roadmap.", 404);
     }
 
-    return sendSuccess(res, progress, "Roadmap progress retrieved.");
+    return sendSuccess(
+      res,
+      {
+        ...progress,
+        velocityMetrics: {
+          velocityMultiplier: "1.0x",
+          learningPace: "Steady Pace",
+          projectedCompletionDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          daysAheadOfSchedule: 0,
+          summaryMessage: "Steady progress. Pass assessments to unlock the next milestone.",
+        },
+      },
+      "Roadmap progress retrieved."
+    );
   } catch (error) {
     return sendError(res, "Failed to retrieve progress.", 500, error.message);
   }

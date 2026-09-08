@@ -6,14 +6,13 @@ import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import skillRoutes from "./routes/skillRoutes.js";
 import roadmapRoutes from "./routes/roadmapRoutes.js";
+import assessmentRoutes from "./routes/assessmentRoutes.js";
 
 const app = express();
 
-// Standard middlewares
 app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
-// Server health check
 app.get("/health", (req, res) => {
   return sendSuccess(res, {
     status: "healthy",
@@ -22,19 +21,15 @@ app.get("/health", (req, res) => {
   }, "Server is healthy");
 });
 
-// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/roadmap", roadmapRoutes);
 app.use("/api/roadmaps", roadmapRoutes);
+app.use("/api/assessments", assessmentRoutes);
 
-// Fallback for non-existent routes
 app.use(notFoundHandler);
-
-// Central error handling
 app.use(errorHandler);
 
-// Start server
 if (config.nodeEnv !== "test") {
   app.listen(config.port, () => {
     console.log(`Stoptify server running on http://localhost:${config.port}`);

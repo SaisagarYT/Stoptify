@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 
-// In-memory data collections matching the PostgreSQL schema
 export const users = [];
 export const userSkills = [];
 export const roadmaps = [
@@ -78,17 +77,77 @@ export const topics = [
 export const userRoadmaps = [];
 export const userTopicProgress = [];
 
-// Helper to find a user by email
+export const assessments = [
+  {
+    id: "e5f6a1b2-c3d4-4e5f-2a3b-4c5d6e7f8a9b",
+    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
+    type: "oral_exam",
+    questions: [
+      {
+        tier: "eli5_core",
+        question: "In plain English, what does it mean for an HTTP method to be idempotent? Give an example.",
+        duration_seconds: 30,
+      },
+      {
+        tier: "tradeoff_edge_case",
+        question: "If PUT is idempotent and POST is not, why not use PUT for every data creation request?",
+        duration_seconds: 45,
+      },
+      {
+        tier: "real_world_application",
+        question: "A user clicks Pay Now twice within 100ms. How do you prevent charging them twice?",
+        duration_seconds: 45,
+      },
+    ],
+    grading_rubric: {
+      eli5_keywords: ["same state", "repeat", "side effect"],
+      tradeoff_keywords: ["uri", "identifier", "resource"],
+      application_keywords: ["idempotency key", "token", "unique constraint"],
+    },
+    passing_score_threshold: 80,
+    time_limit_seconds: 180,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "f6a1b2c3-d4e5-4f6a-3b4c-5d6e7f8a9b0c",
+    topic_id: "b2c3d4e5-f6a1-4b5c-9d0e-1f2a3b4c5d6e",
+    type: "mcq",
+    questions: [
+      {
+        id: "q1",
+        prompt: "Which of the following HTTP methods is considered idempotent by specification?",
+        options: ["POST", "PATCH", "PUT", "CONNECT"],
+        correct_index: 2,
+        explanation: "PUT is idempotent because multiple identical requests have the exact same server state as a single request.",
+      },
+      {
+        id: "q2",
+        prompt: "Which status code should be returned when a resource is successfully created?",
+        options: ["200 OK", "201 Created", "204 No Content", "202 Accepted"],
+        correct_index: 1,
+        explanation: "201 Created signals that the request succeeded and a new resource was created.",
+      },
+    ],
+    grading_rubric: {},
+    passing_score_threshold: 80,
+    time_limit_seconds: 120,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  }
+];
+
+export const userAssessmentResults = [];
+export const oralExamSessions = [];
+
 export const findUserByEmail = (email) => {
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 };
 
-// Helper to find a user by ID
 export const findUserById = (id) => {
   return users.find((u) => u.id === id);
 };
 
-// Helper to create a new user record
 export const createUser = ({ email, encrypted_password, full_name }) => {
   const newUser = {
     id: randomUUID(),
@@ -107,12 +166,10 @@ export const createUser = ({ email, encrypted_password, full_name }) => {
   return newUser;
 };
 
-// Helper to get skills for a user
 export const getSkillsByUserId = (userId) => {
   return userSkills.filter((s) => s.user_id === userId);
 };
 
-// Helper to add or update a skill for a user
 export const upsertSkill = ({ userId, skillName, proficiencyLevel }) => {
   const existingIndex = userSkills.findIndex(
     (s) => s.user_id === userId && s.skill_name.toLowerCase() === skillName.toLowerCase()
@@ -137,24 +194,21 @@ export const upsertSkill = ({ userId, skillName, proficiencyLevel }) => {
   return newSkill;
 };
 
-// Helper to find a roadmap by id or slug
 export const findRoadmapByIdOrSlug = (idOrSlug) => {
   return roadmaps.find((r) => r.id === idOrSlug || r.slug === idOrSlug);
 };
 
-// Helper to get ordered topics for a roadmap
 export const findTopicsByRoadmapId = (roadmapId) => {
   return topics
     .filter((t) => t.roadmap_id === roadmapId)
     .sort((a, b) => a.order_index - b.order_index);
 };
 
-// Helper to find enrollment record
 export const findUserRoadmap = (userId, roadmapId) => {
   return userRoadmaps.find((ur) => ur.user_id === userId && ur.roadmap_id === roadmapId);
 };
 
-// Enrolls user into a roadmap and unlocks the first topic
+// Enrolls user in roadmap and unlocks first topic
 export const enrollUserInRoadmap = (userId, roadmapId) => {
   const existing = findUserRoadmap(userId, roadmapId);
   if (existing) return existing;
@@ -191,7 +245,6 @@ export const enrollUserInRoadmap = (userId, roadmapId) => {
   return userRoadmap;
 };
 
-// Fetches user progress for all topics in a roadmap
 export const getStudentRoadmapProgress = (userId, roadmapId) => {
   const userRoadmap = findUserRoadmap(userId, roadmapId);
   if (!userRoadmap) return null;
@@ -213,7 +266,7 @@ export const getStudentRoadmapProgress = (userId, roadmapId) => {
   };
 };
 
-// Updates a topic's status and automatically unlocks the next topic if completed
+// Updates topic status and unlocks subsequent topic if completed
 export const updateStudentTopicStatus = (userId, roadmapId, topicId, status) => {
   const userRoadmap = findUserRoadmap(userId, roadmapId);
   if (!userRoadmap) return null;
@@ -232,7 +285,6 @@ export const updateStudentTopicStatus = (userId, roadmapId, topicId, status) => 
   const roadmapTopics = findTopicsByRoadmapId(roadmapId);
   const currentIndex = roadmapTopics.findIndex((t) => t.id === topicId);
 
-  // Unlock next topic if current topic completed
   if (status === "completed" && currentIndex + 1 < roadmapTopics.length) {
     const nextTopicId = roadmapTopics[currentIndex + 1].id;
     const nextProgress = userTopicProgress.find(
@@ -244,7 +296,6 @@ export const updateStudentTopicStatus = (userId, roadmapId, topicId, status) => 
     }
   }
 
-  // Recalculate overall progress percentage
   const totalTopics = roadmapTopics.length;
   const completedCount = userTopicProgress.filter(
     (p) => p.user_roadmap_id === userRoadmap.id && p.status === "completed"
@@ -265,4 +316,83 @@ export const updateStudentTopicStatus = (userId, roadmapId, topicId, status) => 
     userRoadmap,
     updatedTopic: currentTopic,
   };
+};
+
+export const getAssessmentsByTopicId = (topicId) => {
+  return assessments.filter((a) => a.topic_id === topicId && a.is_active);
+};
+
+export const getAssessmentById = (id) => {
+  return assessments.find((a) => a.id === id && a.is_active);
+};
+
+export const getUserTopicProgressRecord = (userId, topicId) => {
+  const targetTopic = topics.find((t) => t.id === topicId);
+  if (!targetTopic) return null;
+
+  const userRoadmap = findUserRoadmap(userId, targetTopic.roadmap_id);
+  if (!userRoadmap) return null;
+
+  const progress = userTopicProgress.find(
+    (p) => p.user_roadmap_id === userRoadmap.id && p.topic_id === topicId
+  );
+
+  return { userRoadmap, progress, topic: targetTopic };
+};
+
+export const recordAssessmentResult = ({
+  userTopicProgressId,
+  assessmentId,
+  score,
+  feedback,
+  userAnswersSnapshot,
+  passed,
+  aiExaminerId = "ai-evaluator-v1",
+}) => {
+  const result = {
+    id: randomUUID(),
+    user_topic_progress_id: userTopicProgressId,
+    assessment_id: assessmentId,
+    score,
+    feedback,
+    user_answers_snapshot: userAnswersSnapshot,
+    completed_at: new Date().toISOString(),
+    passed,
+    ai_examiner_id: aiExaminerId,
+    created_at: new Date().toISOString(),
+  };
+
+  userAssessmentResults.push(result);
+
+  const topicProgress = userTopicProgress.find((p) => p.id === userTopicProgressId);
+  if (topicProgress) {
+    topicProgress.attempts_count += 1;
+    topicProgress.last_accessed = new Date().toISOString();
+  }
+
+  return result;
+};
+
+export const recordOralExamSession = ({
+  userAssessmentResultId,
+  audioRecordingUrl = "",
+  transcript = "",
+  aiEvaluation = {},
+  confidenceScore = 0.9,
+  sessionStatus = "completed",
+}) => {
+  const session = {
+    id: randomUUID(),
+    user_assessment_result_id: userAssessmentResultId,
+    audio_recording_url: audioRecordingUrl,
+    transcript,
+    ai_evaluation: aiEvaluation,
+    confidence_score: confidenceScore,
+    session_status: sessionStatus,
+    session_date: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+
+  oralExamSessions.push(session);
+  return session;
 };

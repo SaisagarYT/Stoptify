@@ -6,7 +6,6 @@ import { requireAuth } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Simple validation schemas
 const registerSchema = z.object({
   email: z.string().email({ message: "Must be a valid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
@@ -18,10 +17,8 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Password is required." }),
 });
 
-// Auth endpoints
 router.post("/register", validate(registerSchema), register);
 router.post("/login", validate(loginSchema), login);
 router.get("/me", requireAuth, getMe);
 
 export default router;
-

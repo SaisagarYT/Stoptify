@@ -4,7 +4,6 @@ import { config } from "../config/env.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { findUserByEmail, findUserById, createUser } from "../db/inMemoryStore.js";
 
-// Generates a signed JWT token valid for 7 days
 const generateToken = (user) => {
   return jwt.sign(
     { id: user.id, email: user.email },
@@ -13,26 +12,22 @@ const generateToken = (user) => {
   );
 };
 
-// Formats safe user data without exposing password hash
 const formatUserResponse = (user) => {
   const { encrypted_password, ...safeUser } = user;
   return safeUser;
 };
 
-// Register a new student account
+// Register a new user
 export const register = async (req, res) => {
   try {
     const { email, password, fullName } = req.body;
 
-    // Check if account with email already exists
     const existingUser = findUserByEmail(email);
     if (existingUser) {
       return sendError(res, "An account with this email already exists.", 400);
     }
 
-    // Encrypt password using bcrypt with salt rounds of 10
     const encrypted_password = await bcrypt.hash(password, 10);
-
     const newUser = createUser({
       email,
       encrypted_password,
@@ -62,7 +57,6 @@ export const login = async (req, res) => {
       return sendError(res, "Invalid email or password.", 401);
     }
 
-    // Compare supplied password with encrypted password in store
     const isMatch = await bcrypt.compare(password, user.encrypted_password);
     if (!isMatch) {
       return sendError(res, "Invalid email or password.", 401);
@@ -81,7 +75,7 @@ export const login = async (req, res) => {
   }
 };
 
-// Fetch profile of the currently logged-in user
+// Fetch current user profile
 export const getMe = (req, res) => {
   try {
     const user = findUserById(req.user.id);
@@ -94,4 +88,3 @@ export const getMe = (req, res) => {
     return sendError(res, "Failed to retrieve profile.", 500, error.message);
   }
 };
-

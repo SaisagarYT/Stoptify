@@ -16,7 +16,8 @@ class ApiEndpoints {
   static const consultationStart = '/api/consultation/start';
   static const consultationMessage = '/api/consultation/message';
   static const consultationFinalize = '/api/consultation/finalize';
-  static const calibrateFromInquiry = '/api/consultation/calibrate-from-inquiry';
+  static const calibrateFromInquiry =
+      '/api/consultation/calibrate-from-inquiry';
 
   // --- Roadmaps ---------------------------------------------------------
   static const roadmaps = '/api/roadmaps';
@@ -28,10 +29,12 @@ class ApiEndpoints {
   static String ragGenerate(String topicId) => '/api/rag/generate/$topicId';
 
   // --- Assessments ---------------------------------------------------------
-  static String assessmentsForTopic(String topicId) => '/api/assessments/topic/$topicId';
+  static String assessmentsForTopic(String topicId) =>
+      '/api/assessments/topic/$topicId';
   static const oralStart = '/api/assessments/oral/start';
   static const oralEvaluate = '/api/assessments/oral/evaluate';
-  static String submitMcq(String assessmentId) => '/api/assessments/$assessmentId/submit-mcq';
+  static String submitMcq(String assessmentId) =>
+      '/api/assessments/$assessmentId/submit-mcq';
   static String submitOrdering(String assessmentId) =>
       '/api/assessments/$assessmentId/submit-ordering';
 }

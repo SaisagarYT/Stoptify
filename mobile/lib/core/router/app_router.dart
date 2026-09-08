@@ -23,7 +23,8 @@ class AuthRouterRefresh extends ChangeNotifier {
   }
 }
 
-final _authRouterRefreshProvider = Provider<AuthRouterRefresh>((ref) => AuthRouterRefresh(ref));
+final _authRouterRefreshProvider =
+    Provider<AuthRouterRefresh>((ref) => AuthRouterRefresh(ref));
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(_authRouterRefreshProvider);
@@ -33,17 +34,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authProvider);
-      final loggingIn =
-          state.matchedLocation == RoutePaths.login || state.matchedLocation == RoutePaths.register;
+      final loggingIn = state.matchedLocation == RoutePaths.login ||
+          state.matchedLocation == RoutePaths.register;
 
-      if (auth.status == AuthStatus.unknown) return null; // still bootstrapping session
-      if (auth.status == AuthStatus.unauthenticated && !loggingIn) return RoutePaths.login;
-      if (auth.status == AuthStatus.authenticated && loggingIn) return RoutePaths.resumeIntake;
+      if (auth.status == AuthStatus.unknown) {
+        return null; // still bootstrapping session
+      }
+      if (auth.status == AuthStatus.unauthenticated && !loggingIn) {
+        return RoutePaths.login;
+      }
+      if (auth.status == AuthStatus.authenticated && loggingIn) {
+        return RoutePaths.resumeIntake;
+      }
       return null;
     },
     routes: [
-      GoRoute(path: RoutePaths.login, builder: (context, state) => const LoginScreen()),
-      GoRoute(path: RoutePaths.register, builder: (context, state) => const RegisterScreen()),
+      GoRoute(
+          path: RoutePaths.login,
+          builder: (context, state) => const LoginScreen()),
+      GoRoute(
+          path: RoutePaths.register,
+          builder: (context, state) => const RegisterScreen()),
       GoRoute(
         path: RoutePaths.skillBaseline,
         builder: (context, state) => const SkillBaselineScreen(),
@@ -54,12 +65,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RoutePaths.consultation,
-        builder: (context, state) => ConsultationScreen(domainId: state.pathParameters['domainId']!),
+        builder: (context, state) =>
+            ConsultationScreen(domainId: state.pathParameters['domainId']!),
       ),
       GoRoute(
         path: RoutePaths.roadmapDashboard,
-        builder: (context, state) =>
-            RoadmapDashboardScreen(roadmapId: state.pathParameters['roadmapId']!),
+        builder: (context, state) => RoadmapDashboardScreen(
+            roadmapId: state.pathParameters['roadmapId']!),
       ),
       GoRoute(
         path: RoutePaths.textbookReader,

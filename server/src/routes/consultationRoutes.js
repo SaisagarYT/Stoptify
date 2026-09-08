@@ -13,9 +13,32 @@ import { requireAuth } from "../middlewares/authMiddleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.js";
 import { recordAuditLog } from "../middlewares/auditMiddleware.js";
 
+import multer from "multer";
+import { parseDocumentBuffer } from "../utils/documentParser.js";
+
 const router = express.Router();
 
 const consultationLimiter = rateLimiter({ windowMs: 60000, maxRequests: 40 });
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+const handleResumeUpload = async (req, res, next) => {
+  try {
+    if (req.file) {
+      const extractedText = await parseDocumentBuffer(req.file);
+      req.body.resumeText = extractedText;
+    }
+    next();
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: `Failed to extract text from document: ${err.message}`,
+    });
+  }
+};
 
 const resumeSchema = z.object({
   resumeText: z.string().min(20, { message: "Resume text must be at least 20 characters." }),
@@ -38,6 +61,8 @@ router.post(
   "/analyze-resume",
   requireAuth,
   consultationLimiter,
+  upload.single("resume"),
+  handleResumeUpload,
   validate(resumeSchema),
   recordAuditLog("RESUME_ANALYZE"),
   analyzeResumeEndpoint

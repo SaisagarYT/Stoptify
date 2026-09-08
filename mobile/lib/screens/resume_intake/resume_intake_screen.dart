@@ -38,7 +38,7 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'txt'],
+      allowedExtensions: ['pdf', 'docx', 'doc', 'txt'],
     );
     final path = result?.files.single.path;
     if (path != null) {
@@ -50,19 +50,25 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
   Future<void> _analyzeText() async {
     if (_textController.text.trim().length < 20) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter at least 20 characters of resume content.')),
+        const SnackBar(
+            content:
+                Text('Please enter at least 20 characters of resume content.')),
       );
       return;
     }
-    await ref.read(resumeAnalysisProvider.notifier).analyze(resumeText: _textController.text.trim());
+    await ref
+        .read(resumeAnalysisProvider.notifier)
+        .analyze(resumeText: _textController.text.trim());
   }
 
   // Proceeds to next question or finalizes roadmap
-  Future<void> _handleNextQuestion(List<DiagnosticQuestion> questions, ResumeAnalysisResult analysis) async {
+  Future<void> _handleNextQuestion(
+      List<DiagnosticQuestion> questions, ResumeAnalysisResult analysis) async {
     final currentAnswer = _answerController.text.trim();
     if (currentAnswer.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your response before proceeding.')),
+        const SnackBar(
+            content: Text('Please enter your response before proceeding.')),
       );
       return;
     }
@@ -89,11 +95,12 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
           ? analysis.domainCategories.first.title
           : 'Software Engineering';
 
-      final roadmapId = await ref.read(resumeAnalysisProvider.notifier).calibrateRoadmap(
-            resumeSummary: analysis.candidateSummary,
-            targetDomain: targetDomain,
-            qaAnswers: qaPayload,
-          );
+      final roadmapId =
+          await ref.read(resumeAnalysisProvider.notifier).calibrateRoadmap(
+                resumeSummary: analysis.candidateSummary,
+                targetDomain: targetDomain,
+                qaAnswers: qaPayload,
+              );
 
       if (roadmapId != null && mounted) {
         context.go(RoutePaths.roadmapDashboardFor(roadmapId));
@@ -114,11 +121,13 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
         elevation: 0,
         leading: state.result != null && _currentQuestionIndex > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary),
                 onPressed: () {
                   setState(() {
                     _currentQuestionIndex--;
-                    _answerController.text = _userAnswers[_currentQuestionIndex] ?? '';
+                    _answerController.text =
+                        _userAnswers[_currentQuestionIndex] ?? '';
                   });
                 },
               )
@@ -149,12 +158,14 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
           children: [
             Text(
               'Upload your resume',
-              style: AppTypography.heading(fontSize: 24, weight: FontWeight.w800),
+              style:
+                  AppTypography.heading(fontSize: 24, weight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
             Text(
               'Our AI will extract your claimed technologies and generate 5 focused questions to verify your true skill level and goals.',
-              style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
+              style: AppTypography.body(
+                  fontSize: 14, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 28),
 
@@ -164,7 +175,8 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -177,19 +189,23 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.surfaceElevated,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderStrong, width: 1),
+                        border:
+                            Border.all(color: AppColors.borderStrong, width: 1),
                       ),
-                      child: const Icon(Icons.upload_file_rounded, size: 28, color: AppColors.textPrimary),
+                      child: const Icon(Icons.upload_file_rounded,
+                          size: 28, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Tap to upload PDF or TXT resume',
-                      style: AppTypography.heading(fontSize: 15, weight: FontWeight.w600),
+                      'Tap to upload resume (PDF, DOCX, DOC, TXT)',
+                      style: AppTypography.heading(
+                          fontSize: 15, weight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Supports standard PDF and plain text',
-                      style: AppTypography.body(fontSize: 12.5, color: AppColors.textMuted),
+                      'Supports PDF, Word (.docx, .doc), and plain text',
+                      style: AppTypography.body(
+                          fontSize: 12.5, color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -203,7 +219,9 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                 const Expanded(child: Divider(color: AppColors.borderSubtle)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Text('OR PASTE TEXT', style: AppTypography.heading(fontSize: 11, color: AppColors.textMuted)),
+                  child: Text('OR PASTE TEXT',
+                      style: AppTypography.heading(
+                          fontSize: 11, color: AppColors.textMuted)),
                 ),
                 const Expanded(child: Divider(color: AppColors.borderSubtle)),
               ],
@@ -221,10 +239,13 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               child: TextField(
                 controller: _textController,
                 maxLines: 7,
-                style: AppTypography.body(fontSize: 14, color: AppColors.textPrimary),
+                style: AppTypography.body(
+                    fontSize: 14, color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Paste resume text, skills, or LinkedIn experience here…',
-                  hintStyle: AppTypography.body(fontSize: 13.5, color: AppColors.textMuted),
+                  hintText:
+                      'Paste resume text, skills, or LinkedIn experience here…',
+                  hintStyle: AppTypography.body(
+                      fontSize: 13.5, color: AppColors.textMuted),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
                 ),
@@ -233,7 +254,9 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
 
             if (state.error != null) ...[
               const SizedBox(height: 14),
-              Text(state.error!, style: AppTypography.body(fontSize: 12.5, color: AppColors.errorRed)),
+              Text(state.error!,
+                  style: AppTypography.body(
+                      fontSize: 12.5, color: AppColors.errorRed)),
             ],
 
             const SizedBox(height: 24),
@@ -272,11 +295,15 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               children: [
                 Text(
                   'Question ${_currentQuestionIndex + 1} of ${questions.length}',
-                  style: AppTypography.heading(fontSize: 13.5, weight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: AppTypography.heading(
+                      fontSize: 13.5,
+                      weight: FontWeight.w700,
+                      color: AppColors.textPrimary),
                 ),
                 Text(
                   '${(progress * 100).toInt()}% completed',
-                  style: AppTypography.body(fontSize: 12.5, color: AppColors.textSecondary),
+                  style: AppTypography.body(
+                      fontSize: 12.5, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -288,7 +315,8 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: AppColors.surfaceElevated,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.buttonPrimary),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.buttonPrimary),
                 minHeight: 5,
               ),
             ),
@@ -308,15 +336,20 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                 children: [
                   // Category Pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceElevated,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.borderStrong, width: 1),
+                      border:
+                          Border.all(color: AppColors.borderStrong, width: 1),
                     ),
                     child: Text(
                       currentQ.category.toUpperCase(),
-                      style: AppTypography.heading(fontSize: 10.5, weight: FontWeight.w700, color: AppColors.textSecondary),
+                      style: AppTypography.heading(
+                          fontSize: 10.5,
+                          weight: FontWeight.w700,
+                          color: AppColors.textSecondary),
                     ),
                   ),
 
@@ -325,7 +358,8 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                   // Question Text
                   Text(
                     currentQ.question,
-                    style: AppTypography.heading(fontSize: 17, weight: FontWeight.w700, height: 1.35),
+                    style: AppTypography.heading(
+                        fontSize: 17, weight: FontWeight.w700, height: 1.35),
                   ),
 
                   const SizedBox(height: 10),
@@ -333,7 +367,8 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                   // Hint Text
                   Text(
                     currentQ.hint,
-                    style: AppTypography.body(fontSize: 12.5, color: AppColors.textSecondary),
+                    style: AppTypography.body(
+                        fontSize: 12.5, color: AppColors.textSecondary),
                   ),
 
                   const SizedBox(height: 22),
@@ -344,18 +379,24 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
                     label: 'Your Answer',
                     hint: 'Type your honest response…',
                     keyboardType: TextInputType.text,
-                    onChanged: (text) => _userAnswers[_currentQuestionIndex] = text,
+                    onChanged: (text) =>
+                        _userAnswers[_currentQuestionIndex] = text,
                   ),
                 ],
               ),
-            ).animate(key: ValueKey('question_card_$_currentQuestionIndex')).fadeIn(duration: 250.ms).slideY(begin: 0.04, end: 0),
+            )
+                .animate(key: ValueKey('question_card_$_currentQuestionIndex'))
+                .fadeIn(duration: 250.ms)
+                .slideY(begin: 0.04, end: 0),
 
             const SizedBox(height: 24),
 
             // Next / Finalize Button
             MonochromeButton(
               label: isLast ? 'Calibrate & Build Roadmap' : 'Next Question',
-              icon: isLast ? Icons.auto_awesome_rounded : Icons.arrow_forward_rounded,
+              icon: isLast
+                  ? Icons.auto_awesome_rounded
+                  : Icons.arrow_forward_rounded,
               isLoading: _isCalibrating,
               onPressed: () => _handleNextQuestion(questions, analysis),
             ),
@@ -378,19 +419,22 @@ class _ResumeIntakeScreenState extends ConsumerState<ResumeIntakeScreen> {
               height: 44,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonPrimary),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.buttonPrimary),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               'Calibrating Custom Roadmap',
-              style: AppTypography.heading(fontSize: 20, weight: FontWeight.w800),
+              style:
+                  AppTypography.heading(fontSize: 20, weight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
               'Synthesizing 3-Tier Definition of Done and explicit Anti-Scope boundaries based on your diagnostic answers…',
               textAlign: TextAlign.center,
-              style: AppTypography.body(fontSize: 13.5, color: AppColors.textSecondary, height: 1.4),
+              style: AppTypography.body(
+                  fontSize: 13.5, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
         ),

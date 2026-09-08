@@ -26,7 +26,8 @@ class ResumeAnalysisState {
     return ResumeAnalysisState(
       isAnalyzing: isAnalyzing ?? this.isAnalyzing,
       result: result ?? this.result,
-      selectedDomainCategoryId: selectedDomainCategoryId ?? this.selectedDomainCategoryId,
+      selectedDomainCategoryId:
+          selectedDomainCategoryId ?? this.selectedDomainCategoryId,
       error: error,
     );
   }
@@ -45,7 +46,8 @@ class ResumeAnalysisNotifier extends StateNotifier<ResumeAnalysisState> {
       FormData? formData;
       Map<String, dynamic>? body;
       if (filePath != null) {
-        formData = FormData.fromMap({'resume': await MultipartFile.fromFile(filePath)});
+        formData = FormData.fromMap(
+            {'resume': await MultipartFile.fromFile(filePath)});
       } else {
         body = {'resumeText': resumeText};
       }
@@ -56,7 +58,8 @@ class ResumeAnalysisNotifier extends StateNotifier<ResumeAnalysisState> {
       );
       state = state.copyWith(
         isAnalyzing: false,
-        result: ResumeAnalysisResult.fromJson(envelope.data as Map<String, dynamic>),
+        result: ResumeAnalysisResult.fromJson(
+            envelope.data as Map<String, dynamic>),
       );
     } catch (e) {
       state = state.copyWith(isAnalyzing: false, error: e.toString());

@@ -4,7 +4,8 @@ class DetectedSkill {
   final double rating; // 1-5
   final String? evidence;
 
-  const DetectedSkill({required this.name, required this.rating, this.evidence});
+  const DetectedSkill(
+      {required this.name, required this.rating, this.evidence});
 
   factory DetectedSkill.fromJson(Map<String, dynamic> json) {
     return DetectedSkill(
@@ -36,7 +37,8 @@ class DiagnosticQuestion {
       id: json['id']?.toString() ?? 'q1',
       category: json['category']?.toString() ?? 'Skill Verification',
       question: json['question']?.toString() ?? '',
-      hint: json['hint']?.toString() ?? 'Answer honestly to skip topics you already know.',
+      hint: json['hint']?.toString() ??
+          'Answer honestly to skip topics you already know.',
     );
   }
 }
@@ -80,7 +82,9 @@ class ResumeAnalysisResult {
 
   factory ResumeAnalysisResult.fromJson(Map<String, dynamic> json) {
     final rawSkills = (json['detectedSkills'] as List? ?? []);
-    final rawDomains = (json['suggestedDomains'] as List? ?? json['domainCategories'] as List? ?? []);
+    final rawDomains = (json['suggestedDomains'] as List? ??
+        json['domainCategories'] as List? ??
+        []);
     final rawQuestions = (json['diagnosticQuestions'] as List? ?? []);
 
     return ResumeAnalysisResult(

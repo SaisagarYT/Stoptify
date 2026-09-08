@@ -8,3 +8,4 @@ const router = Router();
 router.get("/audit-logs", requireAuth, getAuditHistory);
 
 export default router;
+

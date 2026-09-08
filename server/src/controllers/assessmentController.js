@@ -9,6 +9,63 @@ import {
   updateStudentTopicStatus,
 } from "../db/inMemoryStore.js";
 
+// Updates topic progress to completed and unlocks next topic in sequence
+const completeTopicProgress = async (userId, topicId) => {
+  if (isDatabaseConnected && supabase) {
+    const { data: topicData } = await supabase
+      .from("topics")
+      .select("id, roadmap_id")
+      .eq("id", topicId)
+      .maybeSingle();
+
+    if (topicData) {
+      const { data: enrollment } = await supabase
+        .from("user_roadmaps")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("roadmap_id", topicData.roadmap_id)
+        .maybeSingle();
+
+      if (enrollment) {
+        await supabase
+          .from("user_topic_progress")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("user_roadmap_id", enrollment.id)
+          .eq("topic_id", topicId);
+
+        const { data: allTopics } = await supabase
+          .from("topics")
+          .select("id, order_index")
+          .eq("roadmap_id", topicData.roadmap_id)
+          .order("order_index", { ascending: true });
+
+        const currentIdx = allTopics?.findIndex((t) => t.id === topicId) ?? -1;
+        if (currentIdx !== -1 && currentIdx + 1 < allTopics.length) {
+          const nextTopic = allTopics[currentIdx + 1];
+          await supabase
+            .from("user_topic_progress")
+            .update({ status: "in_progress", started_at: new Date().toISOString() })
+            .eq("user_roadmap_id", enrollment.id)
+            .eq("topic_id", nextTopic.id);
+        }
+      }
+    }
+  }
+
+  const progressRecord = getUserTopicProgressRecord(userId, topicId);
+  if (progressRecord?.topic) {
+    updateStudentTopicStatus(
+      userId,
+      progressRecord.topic.roadmap_id,
+      progressRecord.topic.id,
+      "completed"
+    );
+  }
+};
+
 // Returns all assessments available for a specific topic
 export const getTopicAssessments = async (req, res) => {
   try {
@@ -107,13 +164,8 @@ export const submitMcq = async (req, res) => {
       }
     }
 
-    if (passed && progressRecord?.topic) {
-      updateStudentTopicStatus(
-        req.user.id,
-        progressRecord.topic.roadmap_id,
-        progressRecord.topic.id,
-        "completed"
-      );
+    if (passed) {
+      await completeTopicProgress(req.user.id, assessment.topic_id);
     }
 
     return sendSuccess(
@@ -300,13 +352,8 @@ export const evaluateOralExam = async (req, res) => {
       }
     }
 
-    if (passed && progressRecord?.topic) {
-      updateStudentTopicStatus(
-        req.user.id,
-        progressRecord.topic.roadmap_id,
-        progressRecord.topic.id,
-        "completed"
-      );
+    if (passed) {
+      await completeTopicProgress(req.user.id, assessment.topic_id);
     }
 
     return sendSuccess(

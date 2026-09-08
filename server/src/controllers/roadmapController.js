@@ -168,17 +168,31 @@ export const getRoadmapProgress = async (req, res) => {
           .maybeSingle();
 
         if (enrollment) {
-          const { data: topicsProgress } = await supabase
+          const { data: allTopics } = await supabase
+            .from("topics")
+            .select("*")
+            .eq("roadmap_id", roadmap.id)
+            .order("order_index", { ascending: true });
+
+          const { data: progressRows } = await supabase
             .from("user_topic_progress")
-            .select("*, topic:topics(*)")
+            .select("*")
             .eq("user_roadmap_id", enrollment.id);
+
+          const topicDetails = (allTopics || []).map((topic) => {
+            const userProg = (progressRows || []).find((p) => p.topic_id === topic.id);
+            return {
+              ...topic,
+              userProgress: userProg || { status: "locked", attempts_count: 0 },
+            };
+          });
 
           return sendSuccess(
             res,
             {
               roadmap,
               enrollment,
-              topicsProgress: topicsProgress || [],
+              topics: topicDetails,
             },
             "Roadmap progress retrieved."
           );
@@ -230,6 +244,8 @@ export const updateTopicProgress = async (req, res) => {
             .eq("user_roadmap_id", enrollment.id)
             .eq("topic_id", topicId);
 
+          let updatedEnrollment = enrollment;
+
           if (status === "completed") {
             const { data: allTopics } = await supabase
               .from("topics")
@@ -237,21 +253,49 @@ export const updateTopicProgress = async (req, res) => {
               .eq("roadmap_id", roadmap.id)
               .order("order_index", { ascending: true });
 
+            const { data: progressRows } = await supabase
+              .from("user_topic_progress")
+              .select("*")
+              .eq("user_roadmap_id", enrollment.id);
+
+            const completedCount = (progressRows || []).filter(
+              (p) => p.status === "completed" || p.topic_id === topicId
+            ).length;
+            const totalCount = allTopics?.length || 1;
+            const percent = Math.round((completedCount / totalCount) * 100);
+
+            const { data: updated } = await supabase
+              .from("user_roadmaps")
+              .update({
+                overall_progress_percent: percent,
+                last_accessed_at: new Date().toISOString(),
+                status: completedCount === totalCount ? "completed" : "in_progress",
+              })
+              .eq("id", enrollment.id)
+              .select()
+              .single();
+
+            if (updated) {
+              updatedEnrollment = updated;
+            }
+
             const currentIdx = allTopics?.findIndex((t) => t.id === topicId) ?? -1;
             if (currentIdx !== -1 && currentIdx + 1 < allTopics.length) {
               const nextTopic = allTopics[currentIdx + 1];
               await supabase
                 .from("user_topic_progress")
-                .update({ status: "in_progress" })
+                .update({ status: "in_progress", started_at: new Date().toISOString() })
                 .eq("user_roadmap_id", enrollment.id)
-                .eq("topic_id", nextTopic.id)
-                .eq("status", "locked");
+                .eq("topic_id", nextTopic.id);
             }
           }
 
           return sendSuccess(
             res,
-            { status },
+            {
+              userRoadmap: updatedEnrollment,
+              updatedTopic: { status },
+            },
             `Topic updated to '${status}'. Next topic progression evaluated.`
           );
         }

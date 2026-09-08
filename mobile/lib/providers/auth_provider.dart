@@ -57,7 +57,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> register({required String name, required String email, required String password}) {
     return _authenticate(
       ApiEndpoints.register,
-      {'name': name, 'email': email, 'password': password},
+      {'name': name, 'fullName': name, 'email': email, 'password': password},
     );
   }
 

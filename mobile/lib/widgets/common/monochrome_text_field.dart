@@ -61,7 +61,9 @@ class _MonochromeTextFieldState extends State<MonochromeTextField> {
               border: Border.all(
                 color: hasError
                     ? AppColors.errorRed
-                    : (_isFocused ? AppColors.borderFocus : AppColors.borderSubtle),
+                    : (_isFocused
+                        ? AppColors.borderFocus
+                        : AppColors.borderSubtle),
                 width: _isFocused || hasError ? 1.5 : 1.0,
               ),
             ),
@@ -69,32 +71,39 @@ class _MonochromeTextFieldState extends State<MonochromeTextField> {
               controller: widget.controller,
               obscureText: widget.isPassword ? _obscured : false,
               keyboardType: widget.keyboardType,
-              style: AppTypography.body(fontSize: 15, color: AppColors.textPrimary),
+              style: AppTypography.body(
+                  fontSize: 15, color: AppColors.textPrimary),
               onChanged: widget.onChanged,
               validator: widget.validator,
               cursorColor: AppColors.textPrimary,
               decoration: InputDecoration(
                 isDense: true,
                 hintText: widget.hint,
-                hintStyle: AppTypography.body(fontSize: 14, color: AppColors.textMuted),
+                hintStyle: AppTypography.body(
+                    fontSize: 14, color: AppColors.textMuted),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 errorBorder: InputBorder.none,
                 focusedErrorBorder: InputBorder.none,
                 filled: false,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 prefixIcon: widget.prefixIcon != null
                     ? Icon(
                         widget.prefixIcon,
                         size: 20,
-                        color: _isFocused ? AppColors.textPrimary : AppColors.textSecondary,
+                        color: _isFocused
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                       )
                     : null,
                 suffixIcon: widget.isPassword
                     ? IconButton(
                         icon: Icon(
-                          _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscured
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
@@ -109,12 +118,14 @@ class _MonochromeTextFieldState extends State<MonochromeTextField> {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.errorRed),
+              const Icon(Icons.error_outline_rounded,
+                  size: 14, color: AppColors.errorRed),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   widget.errorText!,
-                  style: AppTypography.body(fontSize: 12, color: AppColors.errorRed),
+                  style: AppTypography.body(
+                      fontSize: 12, color: AppColors.errorRed),
                 ),
               ),
             ],

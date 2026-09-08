@@ -22,7 +22,8 @@ class AppColors {
   // --- High-Contrast Monochrome CTAs ---
   static const Color buttonPrimary = Color(0xFFFFFFFF); // Solid White
   static const Color buttonText = Color(0xFF121214); // Dark ink text on white
-  static const Color buttonSecondary = Color(0xFF202026); // Muted secondary button
+  static const Color buttonSecondary =
+      Color(0xFF202026); // Muted secondary button
 
   // --- Typography Scale ---
   static const Color textPrimary = Color(0xFFF5F5F7); // Primary crisp off-white
@@ -72,7 +73,8 @@ class AppColors {
     ),
   ];
 
-  static List<BoxShadow> glow(Color color, {double blur = 24, double alpha = 0.35}) {
+  static List<BoxShadow> glow(Color color,
+      {double blur = 24, double alpha = 0.35}) {
     return [
       BoxShadow(
         color: color.withValues(alpha: alpha),

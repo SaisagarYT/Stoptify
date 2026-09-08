@@ -48,5 +48,6 @@ class UserSkill {
 
   Map<String, dynamic> toJson() => {'skillName': skillName, 'level': level};
 
-  UserSkill copyWith({int? level}) => UserSkill(skillName: skillName, level: level ?? this.level);
+  UserSkill copyWith({int? level}) =>
+      UserSkill(skillName: skillName, level: level ?? this.level);
 }

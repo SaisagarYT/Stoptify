@@ -207,10 +207,12 @@ ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to roadmaps and topics
+DROP POLICY IF EXISTS "Public read-access for published roadmaps" ON roadmaps;
 CREATE POLICY "Public read-access for published roadmaps"
     ON roadmaps FOR SELECT
     USING (is_public = TRUE);
 
+DROP POLICY IF EXISTS "Public read-access for topics of published roadmaps" ON topics;
 CREATE POLICY "Public read-access for topics of published roadmaps"
     ON topics FOR SELECT
     USING (EXISTS (SELECT 1 FROM roadmaps WHERE roadmaps.id = topics.roadmap_id AND roadmaps.is_public = TRUE));

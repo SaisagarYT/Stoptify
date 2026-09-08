@@ -70,3 +70,4 @@ export const getTopicContent = (req, res) => {
     return sendError(res, "Failed to retrieve topic content.", 500, error.message);
   }
 };
+

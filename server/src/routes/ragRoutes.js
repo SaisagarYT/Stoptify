@@ -28,3 +28,4 @@ router.post("/search", requireAuth, validate(searchSchema), searchRag);
 router.get("/content/:topicId", getTopicContent);
 
 export default router;
+

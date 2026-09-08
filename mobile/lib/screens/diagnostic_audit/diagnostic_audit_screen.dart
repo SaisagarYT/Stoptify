@@ -305,8 +305,8 @@ class _DiagnosticAuditScreenState extends ConsumerState<DiagnosticAuditScreen> {
             const SizedBox(height: 10),
             Text(
               'Skipping verified beginner fundamentals:',
-              style: AppTypography.body(
-                  fontSize: 12, color: AppColors.textMuted),
+              style:
+                  AppTypography.body(fontSize: 12, color: AppColors.textMuted),
             ),
             const SizedBox(height: 6),
             Wrap(

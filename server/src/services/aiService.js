@@ -25,7 +25,7 @@ export const callAiChat = async ({ systemPrompt, userPrompt, messages }) => {
 
   let endpoint = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
   let apiKey = config.qwenApiKey;
-  let model = "qwen-turbo";
+  let model = "qwen-plus";
 
   if (provider === "deepseek") {
     endpoint = "https://api.deepseek.com/chat/completions";
@@ -178,8 +178,17 @@ Generate 2 MCQs, 3 progressive Feynman oral defense probes, and 1 sequence order
 
 // Analyzes resume text to extract skills, suggested domain categories, and gaps
 export const analyzeResumeContent = async ({ resumeText }) => {
-  const systemPrompt = `You are Stoptify's Senior Talent & Curriculum Architect.
-Analyze the candidate's resume to identify demonstrated technical proficiencies, recommend targeted learning domains, and generate 5 precise diagnostic questions to verify authenticity, strengths, gaps, and career targets.
+  const systemPrompt = `You are Stoptify's Principal Staff Engineer and Technical Examiner.
+Analyze the candidate's resume and generate 5 deeply tailored, highly specific technical diagnostic challenge questions.
+
+CRITICAL RULES FOR QUESTIONS:
+- NEVER ask generic meta-questions like "What are you confident in?", "What do you want to learn?", or "What job do you want?".
+- Every question MUST be a concrete, practical technical scenario, architecture trade-off, or failure edge-case DIRECTLY referencing their named projects, frameworks, databases, or libraries (e.g. Node.js, Express, MongoDB, PostgreSQL, React, Docker, Redis, Stripe):
+  1. Project Architecture & Real Implementation: Probe a specific named project from their resume (e.g. idempotency, event handling, schema design).
+  2. Concurrency & Data Consistency: Ask how they handle race conditions, transaction isolation, or locking in their chosen database.
+  3. Performance & Invalidation/Caching: Ask about query optimization, caching strategies, or memory/event loop bottlenecks.
+  4. Security & Authentication: Ask how they handle token lifecycles, permissions, or API security in their stack.
+  5. Production Debugging & System Failure: Ask how they diagnose a real production outage, unhandled exception, or performance degradation in their technologies.
 
 Output MUST be a valid JSON object matching this exact schema:
 {
@@ -203,32 +212,32 @@ Output MUST be a valid JSON object matching this exact schema:
   "diagnosticQuestions": [
     {
       "id": "q1",
-      "category": "Authenticity & Real Experience",
-      "question": string, // Probing a specific project or claimed skill from their resume to verify if built from scratch vs tutorial
-      "hint": string
+      "category": string, // e.g. "Architecture & Idempotency"
+      "question": string, // Concrete technical scenario directly referencing their stack
+      "hint": string // Helpful architectural clue
     },
     {
       "id": "q2",
-      "category": "Core Strengths",
-      "question": string, // Asking which skill/stack from their resume they can code in with 100% confidence without looking up docs
+      "category": string, // e.g. "Concurrency & Data Consistency"
+      "question": string,
       "hint": string
     },
     {
       "id": "q3",
-      "category": "Identified Weakness & Gaps",
-      "question": string, // Asking which listed topic they feel shaky or theoretical about that needs solid verification
+      "category": string, // e.g. "Performance & Caching"
+      "question": string,
       "hint": string
     },
     {
       "id": "q4",
-      "category": "Career Target & Job Goal",
-      "question": string, // Asking what specific job role, company tier, or project they are actively preparing to land
+      "category": string, // e.g. "Security & Token Architecture"
+      "question": string,
       "hint": string
     },
     {
       "id": "q5",
-      "category": "Depth & When to Stop",
-      "question": string, // Asking whether they need practical production mastery or rapid interview-ready coverage to calibrate anti-scope stop boundaries
+      "category": string, // e.g. "Production Failure & Debugging"
+      "question": string,
       "hint": string
     }
   ]
@@ -383,29 +392,32 @@ export const evaluateDiagnosticInquiry = async ({
   detectedSkills = [],
 }) => {
   const systemPrompt = `You are Stoptify's Lead Technical Evaluator and Anti-Scope Auditor.
-Evaluate the candidate's diagnostic inquiry answers against their resume claims.
-Your goal is to cut through tutorial fluff and provide an honest, rigorous engineering audit.
-Identify:
-1. "Verified Strengths": Skills where their answers proved genuine hands-on production depth.
-2. "Fragile Gaps": Skills where their answers relied on textbook definitions, generic buzzwords, or lacked trade-off reasoning.
-3. "Anti-Scope Bypass": Redundant beginner topics they have proven they know and should officially SKIP (saving time).
-4. "Recommended Career Tracks": 2 to 3 tailored specialized tracks matching their trajectory (e.g. Backend Lead, Cloud Architect, Systems Engineer).
+Evaluate the candidate's diagnostic answers against their claimed resume background.
+Provide a balanced, intelligent, and constructive engineering audit.
+
+EVALUATION GUIDELINES:
+- Recognize valid engineering intuition and practical understanding even in concise or brief answers.
+- Award a fair, realistic readinessScore (typically 65-88 for working developers who show basic grasp; 45-60 for partial answers; only lower if completely blank).
+- ALWAYS identify at least 2 to 3 "verifiedStrengths" highlighting what they proved they know or their core practical proficiencies.
+- Identify 2 to 3 "fragileGaps" highlighting nuanced production risks, edge cases, or scalability limits they should explore next.
+- ALWAYS calculate "antiScopeBypass" reflecting the beginner material their background allows them to SKIP (typically 12 to 24 hours saved, with a list of 3-4 specific beginner topics skipped).
+- Recommend 2 to 3 tailored career tracks with match scores, taglines, and estimated weeks.
 
 Output MUST be a valid JSON object matching this exact schema:
 {
-  "verdictTitle": string, // e.g. "Solid Core Engineering with Distributed Scaling Gaps"
-  "readinessScore": number, // 0 to 100 integer representing actual production readiness
-  "confidenceSummary": string, // 2-3 sentences of blunt, constructive feedback on their true level
+  "verdictTitle": string, // e.g. "Solid Core Engineering with Distributed Scaling Frontier"
+  "readinessScore": number, // realistic integer (e.g. 68 to 85)
+  "confidenceSummary": string, // 2-3 sentences of balanced, constructive, insightful analysis
   "verifiedStrengths": [
-    { "skill": string, "reason": string } // 2 to 4 validated skills
+    { "skill": string, "reason": string } // 2 to 4 validated skills with positive evidence
   ],
   "fragileGaps": [
-    { "skill": string, "risk": string } // 2 to 4 critical gaps or tutorial-fluff warning areas
+    { "skill": string, "risk": string } // 2 to 3 growth areas or production failure risks
   ],
   "antiScopeBypass": {
-    "hoursSaved": number, // estimated total hours of beginner fluff skipped, e.g. 18
-    "bypassPercentage": string, // e.g. "45%"
-    "topicsSkipped": [string] // 3-4 specific beginner topics they do not need to study
+    "hoursSaved": number, // e.g. 14 to 22
+    "bypassPercentage": string, // e.g. "40%"
+    "topicsSkipped": [string] // 3-4 beginner topics to skip
   },
   "recommendedTracks": [
     {

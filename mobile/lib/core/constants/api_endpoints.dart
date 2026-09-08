@@ -16,8 +16,7 @@ class ApiEndpoints {
   static const consultationStart = '/api/consultation/start';
   static const consultationMessage = '/api/consultation/message';
   static const consultationFinalize = '/api/consultation/finalize';
-  static const evaluateDiagnostic =
-      '/api/consultation/evaluate-diagnostic';
+  static const evaluateDiagnostic = '/api/consultation/evaluate-diagnostic';
   static const calibrateFromInquiry =
       '/api/consultation/calibrate-from-inquiry';
 
